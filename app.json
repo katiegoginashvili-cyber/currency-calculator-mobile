@@ -27,8 +27,12 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "extra": {
+      "adaptyPublicSdkKey": "public_live_i9nyCHos.vON6yxKbLQQq8tbNAypx"
+    },
     "plugins": [
-      "expo-asset"
+      "expo-asset",
+      "react-native-adapty"
     ]
   }
 }

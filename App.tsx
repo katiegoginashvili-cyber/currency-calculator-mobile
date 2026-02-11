@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -7,10 +7,15 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { useCurrencyStore } from './src/store/currencyStore';
+import { initializeAdapty } from './src/services/adapty';
 
 const AppContent: React.FC = () => {
   const { colors, isDark } = useTheme();
   const hasHydrated = useCurrencyStore((state) => state._hasHydrated);
+
+  useEffect(() => {
+    void initializeAdapty();
+  }, []);
 
   const navigationTheme = isDark
     ? {
