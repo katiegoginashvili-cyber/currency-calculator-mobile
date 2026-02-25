@@ -6,3 +6,4 @@ export { EditCurrenciesScreen } from './EditCurrenciesScreen';
 export { SettingsScreen } from './SettingsScreen';
 export { DisplaySettingsScreen } from './DisplaySettingsScreen';
 export { UpdateRatesSettingsScreen } from './UpdateRatesSettingsScreen';
+export { ScanScreen } from './ScanScreen';

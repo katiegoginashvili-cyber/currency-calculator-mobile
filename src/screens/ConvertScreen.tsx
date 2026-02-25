@@ -331,7 +331,7 @@ export const ConvertScreen: React.FC = () => {
             onPress={showPaywallModal}
           >
             <MaterialIcons name="star" size={14} color="#FFFFFF" />
-            <Text style={styles.proBadgeText}>Upgrade to PRO</Text>
+            <Text style={styles.proBadgeText}>Go Pro</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -648,8 +648,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingVertical: 9,
+    borderRadius: 18,
   },
   proBadgeText: {
     fontSize: 13,

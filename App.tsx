@@ -3,7 +3,8 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Linking } from 'react-native';
+import Constants from 'expo-constants';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { useCurrencyStore } from './src/store/currencyStore';
@@ -14,8 +15,26 @@ const AppContent: React.FC = () => {
   const hasHydrated = useCurrencyStore((state) => state._hasHydrated);
 
   useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({runId:'tripy-entry-debug-1',hypothesisId:'H1',location:'App.tsx:18',message:'AppContent mounted',data:{appOwnership:Constants.appOwnership,slug:Constants.expoConfig?.slug ?? null,hostUri:Constants.expoConfig?.hostUri ?? null},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     void initializeAdapty();
   }, []);
+
+  useEffect(() => {
+    void (async () => {
+      const initialUrl = await Linking.getInitialURL();
+      // #region agent log
+      fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({runId:'tripy-entry-debug-1',hypothesisId:'H2',location:'App.tsx:27',message:'Initial deep link URL observed',data:{initialUrl:initialUrl ?? null},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+    })();
+  }, []);
+
+  useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({runId:'tripy-entry-debug-1',hypothesisId:'H3',location:'App.tsx:35',message:'Hydration state changed',data:{hasHydrated},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+  }, [hasHydrated]);
 
   const navigationTheme = isDark
     ? {

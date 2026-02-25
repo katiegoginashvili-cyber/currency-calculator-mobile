@@ -9,6 +9,8 @@ import { EditCurrenciesScreen } from '../screens/EditCurrenciesScreen';
 import { DisplaySettingsScreen } from '../screens/DisplaySettingsScreen';
 import { UpdateRatesSettingsScreen } from '../screens/UpdateRatesSettingsScreen';
 import { OnboardingScreen } from '../screens/OnboardingScreen';
+import { ScanScreen } from '../screens/ScanScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
 import { RootStackParamList } from './types';
 import { View, ActivityIndicator } from 'react-native';
 
@@ -84,6 +86,23 @@ export const RootNavigator: React.FC = () => {
         options={{
           presentation: 'fullScreenModal',
           animation: 'slide_from_bottom',
+        }}
+      />
+      <Stack.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{
+          presentation: 'card',
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="ScanModal"
+        component={ScanScreen}
+        options={{
+          presentation: 'transparentModal',
+          animation: 'slide_from_bottom',
+          contentStyle: { backgroundColor: 'transparent' },
         }}
       />
       <Stack.Screen

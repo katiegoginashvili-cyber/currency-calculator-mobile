@@ -7,6 +7,7 @@ export type RootStackParamList = {
   AmountKeypad: { currencyCode: string };
   AddCurrency: undefined;
   EditCurrencies: undefined;
+  ScanModal: undefined;
   Settings: undefined;
   DisplaySettings: undefined;
   UpdateRatesSettings: undefined;
@@ -14,7 +15,7 @@ export type RootStackParamList = {
 
 export type TabParamList = {
   Convert: undefined;
-  Chart: undefined;
+  Statistics: undefined;
   Settings: undefined;
 };
 

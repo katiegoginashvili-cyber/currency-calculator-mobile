@@ -17,7 +17,7 @@ export const TabNavigator: React.FC = () => {
       }}
     >
       <Tab.Screen name="Convert" component={ConvertScreen} />
-      <Tab.Screen name="Chart" component={ChartScreen} />
+      <Tab.Screen name="Statistics" component={ChartScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );

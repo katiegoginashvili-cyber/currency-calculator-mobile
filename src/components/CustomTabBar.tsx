@@ -5,17 +5,18 @@ import { MaterialIcons } from '@expo/vector-icons';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useTheme } from '../theme/ThemeContext';
 
-type IconName = 'calculate' | 'trending-up' | 'settings';
+type IconName = 'calculate' | 'show-chart' | 'document-scanner' | 'settings';
 
 const TAB_ICONS: Record<string, IconName> = {
   Convert: 'calculate',
-  Chart: 'trending-up',
+  Statistics: 'show-chart',
   Settings: 'settings',
 };
 
 const ICON_SIZE = 50;
 const ICON_GAP = 20;
 const BAR_PADDING = 10;
+const SCAN_BUTTON_SIZE = ICON_SIZE + BAR_PADDING * 2;
 
 export const CustomTabBar: React.FC<BottomTabBarProps> = ({
   state,
@@ -39,9 +40,11 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({
 
   // Calculate the translate X for the indicator
   const tabWidth = ICON_SIZE + ICON_GAP;
+  const inputRange = state.routes.map((_, index) => index);
+  const outputRange = state.routes.map((_, index) => index * tabWidth);
   const translateX = indicatorPosition.interpolate({
-    inputRange: [0, 1, 2],
-    outputRange: [0, tabWidth, tabWidth * 2],
+    inputRange,
+    outputRange,
   });
 
   // Colors based on theme
@@ -52,7 +55,8 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({
 
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom + 12 }]}>
-      <View style={[styles.tabBar, { backgroundColor: barBackground }]}>
+      <View style={styles.wrapperRow}>
+        <View style={[styles.tabBar, { backgroundColor: barBackground }]}>
         {/* Animated indicator background */}
         <Animated.View
           style={[
@@ -111,6 +115,21 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({
             </TouchableOpacity>
           );
         })}
+        </View>
+        <TouchableOpacity
+          style={[
+            styles.scanFloatingButton,
+            { backgroundColor: barBackground },
+          ]}
+          onPress={() => navigation.getParent()?.navigate('ScanModal')}
+          activeOpacity={0.8}
+        >
+          <MaterialIcons
+            name="document-scanner"
+            size={24}
+            color={isDark ? colors.text : '#FFFFFF'}
+          />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -138,6 +157,11 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 10,
   },
+  wrapperRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   indicator: {
     position: 'absolute',
     left: BAR_PADDING,
@@ -155,5 +179,17 @@ const styles = StyleSheet.create({
     borderRadius: ICON_SIZE / 2,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  scanFloatingButton: {
+    width: SCAN_BUTTON_SIZE,
+    height: SCAN_BUTTON_SIZE,
+    borderRadius: SCAN_BUTTON_SIZE / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 8,
   },
 });
