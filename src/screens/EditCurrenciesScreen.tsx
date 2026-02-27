@@ -15,6 +15,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { useCurrencyStore, FREE_LIMITS } from '../store/currencyStore';
 import { currencies, getCurrencyByCode, Currency, getFlagBackground } from '../data/currencies';
 import { PaywallModal } from '../components/PaywallModal';
+import { purchaseAdaptyPlan, restoreAdaptyPurchases } from '../services/adapty';
 
 export const EditCurrenciesScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -41,11 +42,25 @@ export const EditCurrenciesScreen: React.FC = () => {
     setShowPaywall(true);
   };
 
-  const handlePurchase = (planId: string) => {
-    // TODO: Integrate with Adapty
-    console.log('Purchase plan:', planId);
-    setShowPaywall(false);
-    Alert.alert('Purchase', `Selected plan: ${planId}\n\nAdapty integration will be added here.`);
+  const handlePurchase = async (planId: string) => {
+    const result = await purchaseAdaptyPlan(planId);
+    if (result.success) {
+      setShowPaywall(false);
+      return;
+    }
+    if (!result.cancelled) {
+      Alert.alert('Purchase failed', result.message);
+    }
+  };
+
+  const handleRestore = async () => {
+    const result = await restoreAdaptyPurchases();
+    if (result.success) {
+      setShowPaywall(false);
+      Alert.alert('Restored', 'Your subscription has been restored.');
+      return;
+    }
+    Alert.alert('Restore', result.message);
   };
 
   const handleToggleCurrency = (code: string) => {
@@ -62,7 +77,15 @@ export const EditCurrenciesScreen: React.FC = () => {
   };
 
   const handleRemove = useCallback((code: string) => {
-    removeCurrency(code);
+    const currency = getCurrencyByCode(code);
+    Alert.alert(
+      'Remove currency?',
+      `Are you sure you want to remove ${currency?.name ?? code} (${code}) from selected currencies?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Remove', style: 'destructive', onPress: () => removeCurrency(code) },
+      ],
+    );
   }, [removeCurrency]);
 
   const handleMoveUp = (index: number) => {
@@ -197,23 +220,6 @@ export const EditCurrenciesScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Search Bar */}
-      <View style={[styles.searchBar, { backgroundColor: colors.border }]}>
-        <MaterialIcons name="search" size={20} color={colors.textSecondary} />
-        <TextInput
-          style={[styles.searchInput, { color: colors.text }]}
-          placeholder="Search currencies..."
-          placeholderTextColor={colors.textTertiary}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <MaterialIcons name="close" size={18} color={colors.textSecondary} />
-          </TouchableOpacity>
-        )}
-      </View>
-
       {/* View Mode Tabs */}
       <View style={styles.tabsContainer}>
         <TouchableOpacity
@@ -239,6 +245,24 @@ export const EditCurrenciesScreen: React.FC = () => {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {viewMode === 'all' && (
+        <View style={[styles.searchBar, { backgroundColor: colors.border }]}>
+          <MaterialIcons name="search" size={20} color={colors.textSecondary} />
+          <TextInput
+            style={[styles.searchInput, { color: colors.text }]}
+            placeholder="Search currencies..."
+            placeholderTextColor={colors.textTertiary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <MaterialIcons name="close" size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
 
       <ScrollView
         style={styles.list}
@@ -273,6 +297,7 @@ export const EditCurrenciesScreen: React.FC = () => {
         visible={showPaywall}
         onClose={() => setShowPaywall(false)}
         onPurchase={handlePurchase}
+        onRestore={handleRestore}
       />
     </View>
   );

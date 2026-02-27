@@ -22,54 +22,78 @@ const heroImage = require('../../assets/paywall-hero.png');
 interface PaywallModalProps {
   visible: boolean;
   onClose: () => void;
-  onPurchase: (planId: string) => void;
+  onPurchase: (planId: string) => Promise<void> | void;
+  onRestore?: () => Promise<void> | void;
 }
 
 const PLANS = [
   {
-    id: 'monthly',
-    name: 'Monthly',
+    id: 'weekly',
+    name: 'Weekly',
     price: '$1.99',
-    description: 'Billed Monthly',
+    description: 'Billed Weekly',
     badge: null,
   },
   {
     id: 'annual',
-    name: 'Yearly',
-    price: '$9.99',
-    description: 'Save $13.89',
-    badge: '58% OFF',
+    name: 'Annually',
+    price: '$19.99',
+    description: '3-day Free Trial, then billed annually',
+    badge: '80% OFF',
   },
 ];
 
 const PRO_FEATURES = [
-  'Unlimited conversions',
-  'Charts & historical data',
-  'Unlimited currencies',
-  'Widgets (Coming soon)',
+  'Scan and Convert with AI',
+  'Unlimited calculator conversions',
+  'Batch converter with unlimited currencies',
+  'Full statistics and historical insights',
 ];
 
 export const PaywallModal: React.FC<PaywallModalProps> = ({
   visible,
   onClose,
   onPurchase,
+  onRestore,
 }) => {
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const [selectedPlan, setSelectedPlan] = useState('annual');
+  const [isProcessingPurchase, setIsProcessingPurchase] = useState(false);
+  const [isProcessingRestore, setIsProcessingRestore] = useState(false);
 
-  const handleSubscribe = () => {
-    onPurchase(selectedPlan);
+  const handleSubscribe = async () => {
+    if (isProcessingPurchase || isProcessingRestore) return;
+    try {
+      setIsProcessingPurchase(true);
+      await onPurchase(selectedPlan);
+    } finally {
+      setIsProcessingPurchase(false);
+    }
   };
 
-  // Light theme colors matching app style
+  const handleRestore = async () => {
+    if (!onRestore || isProcessingPurchase || isProcessingRestore) return;
+    try {
+      setIsProcessingRestore(true);
+      await onRestore();
+    } finally {
+      setIsProcessingRestore(false);
+    }
+  };
+
   const paywallColors = {
-    background: '#F5F5F7',
-    surface: '#FFFFFF',
-    text: '#1C1C1E',
-    textSecondary: '#8E8E93',
+    background: isDark ? colors.background : '#F5F5F7',
+    surface: isDark ? colors.surface : '#FFFFFF',
+    text: colors.text,
+    textSecondary: colors.textSecondary,
     accent: colors.primary,
-    border: '#E5E5EA',
+    border: colors.border,
+    gradientTop: isDark ? 'rgba(0,0,0,0)' : 'rgba(245,245,247,0)',
+    gradientMid1: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(245,245,247,0.3)',
+    gradientMid2: isDark ? 'rgba(0,0,0,0.6)' : 'rgba(245,245,247,0.6)',
+    gradientMid3: isDark ? 'rgba(0,0,0,0.82)' : 'rgba(245,245,247,0.85)',
+    gradientBottom: isDark ? 'rgba(0,0,0,1)' : 'rgba(245,245,247,1)',
   };
 
   return (
@@ -93,15 +117,23 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
               style={styles.heroImage}
               resizeMode="cover"
             />
+            {isDark ? (
+              <View
+                style={[
+                  styles.heroImageDimmer,
+                  { backgroundColor: 'rgba(0,0,0,0.34)' },
+                ]}
+              />
+            ) : null}
             
             {/* iOS-style blur gradient overlay */}
             <LinearGradient
               colors={[
-                'rgba(245, 245, 247, 0)',
-                'rgba(245, 245, 247, 0.3)',
-                'rgba(245, 245, 247, 0.6)',
-                'rgba(245, 245, 247, 0.85)',
-                'rgba(245, 245, 247, 1)',
+                paywallColors.gradientTop,
+                paywallColors.gradientMid1,
+                paywallColors.gradientMid2,
+                paywallColors.gradientMid3,
+                paywallColors.gradientBottom,
               ]}
               locations={[0, 0.3, 0.5, 0.7, 1]}
               style={styles.heroGradient}
@@ -111,9 +143,9 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
 
             {/* Header with Restore and Close - on top of image */}
             <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-              <TouchableOpacity style={styles.restoreButton}>
+              <TouchableOpacity style={styles.restoreButton} onPress={handleRestore} disabled={isProcessingPurchase || isProcessingRestore}>
                 <Text style={[styles.restoreText, { color: paywallColors.text }]}>
-                  Restore
+                  {isProcessingRestore ? 'Restoring...' : 'Restore'}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -208,9 +240,10 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
           <TouchableOpacity
             style={[styles.subscribeButton, { backgroundColor: paywallColors.accent }]}
             onPress={handleSubscribe}
+            disabled={isProcessingPurchase || isProcessingRestore}
           >
             <Text style={styles.subscribeButtonText}>
-              Subscribe
+              {isProcessingPurchase ? 'Processing...' : 'Subscribe'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -247,6 +280,13 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 150,
+  },
+  heroImageDimmer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   header: {
     flexDirection: 'row',

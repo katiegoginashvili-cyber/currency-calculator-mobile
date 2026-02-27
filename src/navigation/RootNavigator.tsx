@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../theme/ThemeContext';
@@ -11,6 +11,7 @@ import { UpdateRatesSettingsScreen } from '../screens/UpdateRatesSettingsScreen'
 import { OnboardingScreen } from '../screens/OnboardingScreen';
 import { ScanScreen } from '../screens/ScanScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { LegalDocumentScreen } from '../screens/LegalDocumentScreen';
 import { RootStackParamList } from './types';
 import { View, ActivityIndicator } from 'react-native';
 
@@ -20,18 +21,89 @@ export const RootNavigator: React.FC = () => {
   const { colors } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const loadingStartMsRef = useRef<number>(Date.now());
 
   useEffect(() => {
+    // #region agent log
+    console.log('[SplashDebug]', JSON.stringify({
+      runId: 'splash-console-run-1',
+      hypothesisId: 'H3',
+      location: 'RootNavigator.tsx:25',
+      message: 'RootNavigator mounted',
+      data: {},
+      timestamp: Date.now(),
+    }));
+    // #endregion
     checkOnboardingStatus();
   }, []);
 
+  useEffect(() => {
+    if (!isLoading) {
+      return;
+    }
+    const startMs = loadingStartMsRef.current;
+    const timer = setTimeout(() => {
+      if (isLoading) {
+        // #region agent log
+        console.log('[SplashDebug]', JSON.stringify({
+          runId: 'splash-console-run-3',
+          hypothesisId: 'H9',
+          location: 'RootNavigator.tsx:42',
+          message: 'Root loading exceeded threshold',
+          data: { elapsedMs: Date.now() - startMs, isLoading, showOnboarding },
+          timestamp: Date.now(),
+        }));
+        // #endregion
+      }
+    }, 4000);
+
+    return () => clearTimeout(timer);
+  }, [isLoading, showOnboarding]);
+
+  useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'splash-debug-run-2',hypothesisId:'H3',location:'RootNavigator.tsx:28',message:'Root navigator visual gate state',data:{isLoading,showOnboarding,background:colors.background},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+    // #region agent log
+    console.log('[SplashDebug]', JSON.stringify({
+      runId: 'splash-console-run-1',
+      hypothesisId: 'H3',
+      location: 'RootNavigator.tsx:36',
+      message: 'Root navigator visual gate state',
+      data: { isLoading, showOnboarding, background: colors.background },
+      timestamp: Date.now(),
+    }));
+    // #endregion
+  }, [isLoading, showOnboarding, colors.background]);
+
   const checkOnboardingStatus = async () => {
     try {
-      // Reset onboarding to show it again (remove this line after testing)
-      await AsyncStorage.removeItem('onboarding_complete');
-      
       const onboardingComplete = await AsyncStorage.getItem('onboarding_complete');
-      setShowOnboarding(onboardingComplete !== 'true');
+      // #region agent log
+      fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'splash-debug-run-2',hypothesisId:'H5',location:'RootNavigator.tsx:41',message:'Onboarding storage probe',data:{onboardingComplete},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+      // #region agent log
+      console.log('[SplashDebug]', JSON.stringify({
+        runId: 'splash-console-run-1',
+        hypothesisId: 'H5',
+        location: 'RootNavigator.tsx:52',
+        message: 'Onboarding storage probe',
+        data: { onboardingComplete },
+        timestamp: Date.now(),
+      }));
+      // #endregion
+      const shouldShowOnboarding = onboardingComplete === 'false';
+      // #region agent log
+      console.log('[SplashDebug]', JSON.stringify({
+        runId: 'splash-console-run-1',
+        hypothesisId: 'H6',
+        location: 'RootNavigator.tsx:60',
+        message: 'Resolved onboarding visibility',
+        data: { onboardingComplete, shouldShowOnboarding },
+        timestamp: Date.now(),
+      }));
+      // #endregion
+      setShowOnboarding(shouldShowOnboarding);
     } catch (error) {
       console.error('Error checking onboarding status:', error);
     } finally {
@@ -121,6 +193,23 @@ export const RootNavigator: React.FC = () => {
           animation: 'slide_from_right',
         }}
       />
+      <Stack.Screen
+        name="LegalDocument"
+        component={LegalDocumentScreen}
+        options={{
+          presentation: 'card',
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="OnboardingPreview"
+        options={{
+          presentation: 'card',
+          animation: 'slide_from_right',
+        }}
+      >
+        {() => <OnboardingScreen onComplete={() => {}} />}
+      </Stack.Screen>
     </Stack.Navigator>
   );
 };

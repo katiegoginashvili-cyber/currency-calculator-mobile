@@ -2,13 +2,14 @@
   "expo": {
     "name": "Currency Calculator",
     "slug": "currency-calculator",
+    "scheme": "currencycalculator",
     "version": "1.0.0",
     "sdkVersion": "54.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -16,22 +17,35 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow camera access to scan prices and currency notes."
+      },
+      "bundleIdentifier": "com.majestic.currencycalculator"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.majestic.currencycalculator"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "adaptyPublicSdkKey": "public_live_i9nyCHos.vON6yxKbLQQq8tbNAypx"
+      "adaptyPublicSdkKey": "public_live_8ipuIHkZ.s3mhL0nY1gVCkGJwDnKy",
+      "eas": {
+        "projectId": "ac8fdf93-b552-4f7f-9e6b-e3bbee760687"
+      }
     },
     "plugins": [
       "expo-asset",
+      "expo-camera",
       "react-native-adapty"
     ]
   }

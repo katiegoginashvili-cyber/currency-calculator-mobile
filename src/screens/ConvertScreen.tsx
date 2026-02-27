@@ -24,6 +24,7 @@ import { CurrencyRow } from '../components/CurrencyRow';
 import { PaywallModal } from '../components/PaywallModal';
 import { getCurrencyByCode, getFlagBackground, currencies, getLocalCurrency } from '../data/currencies';
 import type { RootStackParamList } from '../navigation/types';
+import { purchaseAdaptyPlan, restoreAdaptyPurchases } from '../services/adapty';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -50,6 +51,8 @@ export const ConvertScreen: React.FC = () => {
     canRefresh,
     incrementConversionCount,
     getRemainingConversions,
+    applyLocationPreference,
+    locationSuggestions,
   } = useCurrencyStore();
   const [activeTab, setActiveTab] = useState(0);
   
@@ -71,6 +74,25 @@ export const ConvertScreen: React.FC = () => {
   
   // Paywall modal state
   const [showPaywall, setShowPaywall] = useState(false);
+  const calculatorScrollRef = useRef<ScrollView>(null);
+  const multiScrollRef = useRef<ScrollView>(null);
+  const calculatorOffsetYRef = useRef(0);
+  const multiOffsetYRef = useRef(0);
+
+  const resetPullOffset = (source: 'open' | 'close') => {
+    const beforeCalculator = calculatorOffsetYRef.current;
+    const beforeMulti = multiOffsetYRef.current;
+    calculatorScrollRef.current?.scrollTo({ y: 0, animated: true });
+    multiScrollRef.current?.scrollTo({ y: 0, animated: true });
+    calculatorOffsetYRef.current = 0;
+    multiOffsetYRef.current = 0;
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'refresh-debug-run-3',hypothesisId:'H8',location:'ConvertScreen.tsx:86',message:'resetPullOffset called',data:{source,beforeCalculator,beforeMulti,afterCalculator:calculatorOffsetYRef.current,afterMulti:multiOffsetYRef.current},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+    // #region agent log
+    console.log('[RefreshDebug]', JSON.stringify({runId:'refresh-console-run-3',hypothesisId:'H8',location:'ConvertScreen.tsx:86',message:'resetPullOffset called',data:{source,beforeCalculator,beforeMulti,afterCalculator:calculatorOffsetYRef.current,afterMulti:multiOffsetYRef.current},timestamp:Date.now()}));
+    // #endregion
+  };
   
   // Cursor blinking animation
   const cursorOpacity = useRef(new Animated.Value(1)).current;
@@ -88,19 +110,72 @@ export const ConvertScreen: React.FC = () => {
 
   // Refresh rates on mount
   useEffect(() => {
-    refreshRates();
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'splash-debug-run-4',hypothesisId:'H12',location:'ConvertScreen.tsx:92',message:'Convert screen mount effect start',data:{fromCurrency,toCurrency,selectedCount:selectedCurrencies.length},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+    void refreshRates()
+      .then(() => {
+        // #region agent log
+        fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'splash-debug-run-4',hypothesisId:'H12',location:'ConvertScreen.tsx:96',message:'Convert screen mount refresh resolved',data:{},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
+      })
+      .catch((error: unknown) => {
+        // #region agent log
+        fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'splash-debug-run-4',hypothesisId:'H12',location:'ConvertScreen.tsx:101',message:'Convert screen mount refresh rejected',data:{message:error instanceof Error ? error.message : 'unknown'},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
+      });
   }, []);
+
+  useEffect(() => {
+    if (locationSuggestions) {
+      applyLocationPreference(true);
+      setFromCurrency(localCurrency);
+      setToCurrency(localCurrency === 'USD' ? 'EUR' : 'USD');
+    }
+  }, [locationSuggestions, localCurrency, applyLocationPreference]);
 
   // Show paywall modal
   const showPaywallModal = () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'refresh-debug-run-2',hypothesisId:'H5',location:'ConvertScreen.tsx:124',message:'showPaywallModal invoked',data:{activeTab,showPaywall,calculatorOffsetY:calculatorOffsetYRef.current,multiOffsetY:multiOffsetYRef.current},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+    // #region agent log
+    console.log('[RefreshDebug]', JSON.stringify({runId:'refresh-console-run-2',hypothesisId:'H5',location:'ConvertScreen.tsx:124',message:'showPaywallModal invoked',data:{activeTab,showPaywall,calculatorOffsetY:calculatorOffsetYRef.current,multiOffsetY:multiOffsetYRef.current},timestamp:Date.now()}));
+    // #endregion
+    resetPullOffset('open');
     setShowPaywall(true);
   };
 
-  const handlePurchase = (planId: string) => {
-    // TODO: Integrate with Adapty
-    console.log('Purchase plan:', planId);
+  const handleClosePaywall = () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'refresh-debug-run-2',hypothesisId:'H6',location:'ConvertScreen.tsx:132',message:'paywall close requested',data:{activeTab,calculatorOffsetY:calculatorOffsetYRef.current,multiOffsetY:multiOffsetYRef.current,isRefreshing:useCurrencyStore.getState().isRefreshing},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+    // #region agent log
+    console.log('[RefreshDebug]', JSON.stringify({runId:'refresh-console-run-2',hypothesisId:'H6',location:'ConvertScreen.tsx:132',message:'paywall close requested',data:{activeTab,calculatorOffsetY:calculatorOffsetYRef.current,multiOffsetY:multiOffsetYRef.current,isRefreshing:useCurrencyStore.getState().isRefreshing},timestamp:Date.now()}));
+    // #endregion
+    resetPullOffset('close');
     setShowPaywall(false);
-    Alert.alert('Purchase', `Selected plan: ${planId}\n\nAdapty integration will be added here.`);
+  };
+
+  const handlePurchase = async (planId: string) => {
+    const result = await purchaseAdaptyPlan(planId);
+    if (result.success) {
+      setShowPaywall(false);
+      return;
+    }
+    if (!result.cancelled) {
+      Alert.alert('Purchase failed', result.message);
+    }
+  };
+
+  const handleRestore = async () => {
+    const result = await restoreAdaptyPurchases();
+    if (result.success) {
+      setShowPaywall(false);
+      Alert.alert('Restored', 'Your subscription has been restored.');
+      return;
+    }
+    Alert.alert('Restore', result.message);
   };
 
   // Calculate converted amount
@@ -305,11 +380,20 @@ export const ConvertScreen: React.FC = () => {
   };
 
   const handleRefresh = async () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'refresh-debug-run-1',hypothesisId:'H1',location:'ConvertScreen.tsx:330',message:'pull-to-refresh triggered',data:{isRefreshing,canRefresh:canRefresh(),showPaywall},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     if (!canRefresh()) {
       showPaywallModal();
+      // #region agent log
+      fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'refresh-debug-run-1',hypothesisId:'H1',location:'ConvertScreen.tsx:334',message:'pull-to-refresh blocked by paywall gate',data:{isRefreshingAfterBlock:isRefreshing},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
       return;
     }
     await refreshRates();
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'refresh-debug-run-1',hypothesisId:'H3',location:'ConvertScreen.tsx:340',message:'pull-to-refresh finished await',data:{isRefreshingAfterAwait:useCurrencyStore.getState().isRefreshing},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
   };
 
   const keypadButtons = [
@@ -366,9 +450,14 @@ export const ConvertScreen: React.FC = () => {
       {activeTab === 0 ? (
         // Calculator Tab
         <ScrollView
+          ref={calculatorScrollRef}
           style={styles.scrollView}
           contentContainerStyle={styles.calculatorContent}
           showsVerticalScrollIndicator={false}
+          onScroll={(event) => {
+            calculatorOffsetYRef.current = event.nativeEvent.contentOffset.y;
+          }}
+          scrollEventThrottle={16}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
@@ -507,9 +596,14 @@ export const ConvertScreen: React.FC = () => {
       ) : (
         // Multi Convert Tab
         <ScrollView
+          ref={multiScrollRef}
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          onScroll={(event) => {
+            multiOffsetYRef.current = event.nativeEvent.contentOffset.y;
+          }}
+          scrollEventThrottle={16}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
@@ -526,7 +620,7 @@ export const ConvertScreen: React.FC = () => {
               Currencies
             </Text>
             <TouchableOpacity onPress={handleAddNew}>
-              <Text style={[styles.addNew, { color: colors.primary }]}>Add new</Text>
+              <Text style={[styles.addNew, { color: colors.primary }]}>Edit</Text>
             </TouchableOpacity>
           </View>
 
@@ -615,8 +709,9 @@ export const ConvertScreen: React.FC = () => {
       {/* Paywall Modal */}
       <PaywallModal
         visible={showPaywall}
-        onClose={() => setShowPaywall(false)}
+        onClose={handleClosePaywall}
         onPurchase={handlePurchase}
+        onRestore={handleRestore}
       />
     </View>
   );

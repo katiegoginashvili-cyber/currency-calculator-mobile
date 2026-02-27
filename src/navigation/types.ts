@@ -11,6 +11,8 @@ export type RootStackParamList = {
   Settings: undefined;
   DisplaySettings: undefined;
   UpdateRatesSettings: undefined;
+  LegalDocument: { title: string; content: string };
+  OnboardingPreview: undefined;
 };
 
 export type TabParamList = {

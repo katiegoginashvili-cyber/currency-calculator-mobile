@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,15 @@ import {
   FlatList,
   Animated,
   Image,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PaywallModal } from '../components/PaywallModal';
+import { useCurrencyStore } from '../store/currencyStore';
+import { LinearGradient } from 'expo-linear-gradient';
+import { purchaseAdaptyPlan, restoreAdaptyPurchases } from '../services/adapty';
 
 const { width } = Dimensions.get('window');
 
@@ -20,6 +24,11 @@ const { width } = Dimensions.get('window');
 const imageSpeed = require('../../assets/onboarding-speed.png');
 const imageMulti = require('../../assets/onboarding-multi.png');
 const imageOffline = require('../../assets/onboarding-offline.png');
+const DARK_IMAGE_OPACITY = 0.58;
+const DARK_TOP_BLEND_START_ALPHA = 0.95;
+const DARK_TOP_BLEND_END_ALPHA = 0;
+const DARK_BOTTOM_BLEND_START_ALPHA = 0;
+const DARK_BOTTOM_BLEND_END_ALPHA = 0.96;
 
 interface OnboardingSlide {
   id: string;
@@ -59,19 +68,75 @@ interface OnboardingScreenProps {
 
 export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showPaywall, setShowPaywall] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
+  const hasLoggedRootLayout = useRef(false);
+  const hasLoggedImageLayout = useRef(false);
+  const applyLocationPreference = useCurrencyStore((state) => state.applyLocationPreference);
+  const darkTopBlendHeight = 176;
+  const darkBottomBlendHeight = 220;
+
+  useEffect(() => {
+    if (!isDark) return;
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'onboarding-gradient-debug-post-fix-1',hypothesisId:'H1',location:'OnboardingScreen.tsx:78',message:'Onboarding dark gradient config snapshot',data:{currentIndex,isDark,background:colors.background,imageOpacity:DARK_IMAGE_OPACITY,darkTopBlendHeight,darkBottomBlendHeight,topStartAlpha:DARK_TOP_BLEND_START_ALPHA,bottomEndAlpha:DARK_BOTTOM_BLEND_END_ALPHA},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+    // #region agent log
+    console.log('[OnboardingDebug]', JSON.stringify({runId:'onboarding-console-run-1',hypothesisId:'H1',location:'OnboardingScreen.tsx:75',message:'Onboarding dark gradient config snapshot',data:{currentIndex,isDark,background:colors.background,imageOpacity:DARK_IMAGE_OPACITY,darkTopBlendHeight,darkBottomBlendHeight,topStartAlpha:DARK_TOP_BLEND_START_ALPHA,topEndAlpha:DARK_TOP_BLEND_END_ALPHA,bottomStartAlpha:DARK_BOTTOM_BLEND_START_ALPHA,bottomEndAlpha:DARK_BOTTOM_BLEND_END_ALPHA},timestamp:Date.now()}));
+    // #endregion
+  }, [currentIndex, isDark, colors.background]);
+
+  useEffect(() => {
+    if (!isDark) return;
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'onboarding-gradient-debug-1',hypothesisId:'H2',location:'OnboardingScreen.tsx:86',message:'Theme palette snapshot for blend comparison',data:{background:colors.background,surface:colors.surface,text:colors.text,textSecondary:colors.textSecondary,currentSlide:ONBOARDING_SLIDES[currentIndex]?.id},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+  }, [isDark, colors.background, colors.surface, colors.text, colors.textSecondary, currentIndex]);
+
+  useEffect(() => {
+    if (!isDark) return;
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'onboarding-gradient-debug-post-fix-1',hypothesisId:'H3',location:'OnboardingScreen.tsx:96',message:'Active onboarding visual type snapshot',data:{currentIndex,visualType:ONBOARDING_SLIDES[currentIndex]?.visualType,imageMode:'cover',imageOpacityDark:DARK_IMAGE_OPACITY},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+  }, [isDark, currentIndex]);
+
+  useEffect(() => {
+    if (!isDark) return;
+    const estimatedOverlapPx = Math.max(0, darkTopBlendHeight + darkBottomBlendHeight - 380);
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'onboarding-gradient-debug-post-fix-2',hypothesisId:'H6',location:'OnboardingScreen.tsx:112',message:'Gradient overlap risk snapshot',data:{darkTopBlendHeight,darkBottomBlendHeight,imageHeight:380,estimatedOverlapPx,topEndAlpha:DARK_TOP_BLEND_END_ALPHA,bottomStartAlpha:DARK_BOTTOM_BLEND_START_ALPHA},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+  }, [isDark, darkTopBlendHeight, darkBottomBlendHeight]);
 
   const handleNext = async () => {
     if (currentIndex < ONBOARDING_SLIDES.length - 1) {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
       setCurrentIndex(currentIndex + 1);
     } else {
-      // Show paywall after onboarding
-      setShowPaywall(true);
+      Alert.alert(
+        'Enable Location Suggestions',
+        'Allow location-based currency suggestions so local currency is prioritized throughout the app.',
+        [
+          {
+            text: 'Not now',
+            style: 'cancel',
+            onPress: () => {
+              applyLocationPreference(false);
+              setShowPaywall(true);
+            },
+          },
+          {
+            text: 'Enable',
+            onPress: () => {
+              applyLocationPreference(true);
+              setShowPaywall(true);
+            },
+          },
+        ]
+      );
     }
   };
 
@@ -86,8 +151,23 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
   };
 
   const handlePurchase = async (planId: string) => {
-    // TODO: Integrate with Adapty
-    console.log('Purchase plan:', planId);
+    const result = await purchaseAdaptyPlan(planId);
+    if (!result.success) {
+      if (!result.cancelled) {
+        Alert.alert('Purchase failed', result.message);
+      }
+      return;
+    }
+    await AsyncStorage.setItem('onboarding_complete', 'true');
+    onComplete();
+  };
+
+  const handleRestore = async () => {
+    const result = await restoreAdaptyPurchases();
+    if (!result.success) {
+      Alert.alert('Restore', result.message);
+      return;
+    }
     await AsyncStorage.setItem('onboarding_complete', 'true');
     onComplete();
   };
@@ -110,12 +190,38 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
     }
 
     return (
-      <View style={styles.imageContainer}>
+      <View
+        style={styles.imageContainer}
+        onLayout={(event) => {
+          if (!isDark || hasLoggedImageLayout.current) return;
+          hasLoggedImageLayout.current = true;
+          const { width: layoutWidth, height: layoutHeight, x, y } = event.nativeEvent.layout;
+          // #region agent log
+          fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'onboarding-gradient-debug-1',hypothesisId:'H4',location:'OnboardingScreen.tsx:171',message:'Image container layout in dark mode',data:{layoutWidth,layoutHeight,x,y,darkTopBlendHeight,darkBottomBlendHeight},timestamp:Date.now()})}).catch(()=>{});
+          // #endregion
+        }}
+      >
         <Image
           source={imageSource}
-          style={styles.image3D}
+          style={[styles.image3D, isDark ? { opacity: DARK_IMAGE_OPACITY } : null]}
           resizeMode="cover"
         />
+        {isDark ? (
+          <>
+            <LinearGradient
+              colors={[`rgba(0,0,0,${DARK_TOP_BLEND_START_ALPHA})`, `rgba(0,0,0,${DARK_TOP_BLEND_END_ALPHA})`]}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+              style={[styles.topBlend, { height: darkTopBlendHeight }]}
+            />
+            <LinearGradient
+              colors={[`rgba(0,0,0,${DARK_BOTTOM_BLEND_START_ALPHA})`, `rgba(0,0,0,${DARK_BOTTOM_BLEND_END_ALPHA})`]}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+              style={[styles.bottomBlend, { height: darkBottomBlendHeight }]}
+            />
+          </>
+        ) : null}
       </View>
     );
   };
@@ -176,7 +282,17 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View
+      style={[styles.container, { backgroundColor: colors.background }]}
+      onLayout={(event) => {
+        if (!isDark || hasLoggedRootLayout.current) return;
+        hasLoggedRootLayout.current = true;
+        const { width: layoutWidth, height: layoutHeight } = event.nativeEvent.layout;
+        // #region agent log
+        fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'onboarding-gradient-debug-1',hypothesisId:'H5',location:'OnboardingScreen.tsx:266',message:'Onboarding root layout in dark mode',data:{layoutWidth,layoutHeight,safeAreaTop:insets.top,safeAreaBottom:insets.bottom},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
+      }}
+    >
       {/* Skip Button */}
       <TouchableOpacity
         style={[styles.skipButton, { top: insets.top + 16 }]}
@@ -225,6 +341,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
         visible={showPaywall}
         onClose={handleClosePaywall}
         onPurchase={handlePurchase}
+        onRestore={handleRestore}
       />
     </View>
   );
@@ -302,5 +419,22 @@ const styles = StyleSheet.create({
   image3D: {
     width: '100%',
     height: '100%',
+  },
+  image3DDark: {
+    opacity: 0.85,
+  },
+  topBlend: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 96,
+  },
+  bottomBlend: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 130,
   },
 });

@@ -7,7 +7,14 @@
     "ios:device": "env -u CI LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 SSL_CERT_FILE=\"$(brew --prefix ca-certificates)/share/ca-certificates/cacert.pem\" RCT_METRO_PORT=8081 expo run:ios --device \"00008150-001E79A21A12401C\" --no-bundler",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "CI=0 expo start --web --port 8081"
+    "web": "CI=0 expo start --web --port 8081",
+    "firebase:login": "npx firebase-tools login",
+    "firebase:login:nolocalhost": "npx firebase-tools login --reauth --no-localhost",
+    "firebase:whoami": "npx firebase-tools login:list",
+    "firebase:use:project": "npx firebase-tools use currencycalculator-d4998",
+    "firebase:secrets:openai": "npx firebase-tools functions:secrets:set OPENAI_API_KEY",
+    "firebase:secrets:rates": "npx firebase-tools functions:secrets:set EXCHANGE_RATE_API_KEY",
+    "firebase:deploy:functions": "npx firebase-tools deploy --only functions"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -38,8 +45,11 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.0",
+    "@expo/ngrok": "^4.1.3",
     "@types/react": "~19.1.10",
     "babel-preset-expo": "~54.0.10",
+    "eas-cli": "^18.0.5",
+    "firebase-tools": "^15.7.0",
     "typescript": "~5.9.2"
   },
   "private": true

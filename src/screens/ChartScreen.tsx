@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -24,6 +24,7 @@ import { PaywallModal } from '../components/PaywallModal';
 
 import { getCurrencyByCode, getFlagBackground, currencies } from '../data/currencies';
 import { fetchChartData, ChartDataPoint } from '../api/exchangeRates';
+import { purchaseAdaptyPlan, restoreAdaptyPurchases } from '../services/adapty';
 
 const { width, height } = Dimensions.get('window');
 
@@ -62,7 +63,7 @@ const buildFallbackChartData = (period: string, baseRate: number): ChartDataPoin
 
 export const ChartScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { rates, refreshRates, isRefreshing, isPro } = useCurrencyStore();
   
   const [selectedPeriod, setSelectedPeriod] = useState('1M');
@@ -83,6 +84,7 @@ export const ChartScreen: React.FC = () => {
   const [pendingPeriod, setPendingPeriod] = useState<string | null>(null);
   const [pendingFromCurrency, setPendingFromCurrency] = useState<string | null>(null);
   const [pendingToCurrency, setPendingToCurrency] = useState<string | null>(null);
+  const chartScrollOffsetYRef = useRef(0);
   
   // Fetch chart data when currencies or period change
   useEffect(() => {
@@ -180,7 +182,13 @@ export const ChartScreen: React.FC = () => {
   };
 
   const handleRefresh = async () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'refresh-debug-run-1',hypothesisId:'H4',location:'ChartScreen.tsx:183',message:'chart pull-to-refresh triggered',data:{isRefreshing,showPaywall,isPro},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     if (handleLockedAction()) {
+      // #region agent log
+      fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'refresh-debug-run-1',hypothesisId:'H4',location:'ChartScreen.tsx:186',message:'chart refresh blocked by paywall',data:{isRefreshingAfterBlock:isRefreshing},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
       return;
     }
     await refreshRates();
@@ -275,9 +283,24 @@ export const ChartScreen: React.FC = () => {
     setShowPaywall(true);
   };
 
-  const handlePurchase = (planId: string) => {
-    // TODO: Integrate with Adapty
-    console.log('Purchase plan:', planId);
+  const handleClosePaywall = () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'refresh-debug-run-2',hypothesisId:'H7',location:'ChartScreen.tsx:281',message:'chart paywall close requested',data:{scrollOffsetY:chartScrollOffsetYRef.current,isRefreshing:useCurrencyStore.getState().isRefreshing,showPaywall},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+    // #region agent log
+    console.log('[RefreshDebug]', JSON.stringify({runId:'refresh-console-run-2',hypothesisId:'H7',location:'ChartScreen.tsx:281',message:'chart paywall close requested',data:{scrollOffsetY:chartScrollOffsetYRef.current,isRefreshing:useCurrencyStore.getState().isRefreshing,showPaywall},timestamp:Date.now()}));
+    // #endregion
+    setShowPaywall(false);
+  };
+
+  const handlePurchase = async (planId: string) => {
+    const result = await purchaseAdaptyPlan(planId);
+    if (!result.success) {
+      if (!result.cancelled) {
+        Alert.alert('Purchase failed', result.message);
+      }
+      return;
+    }
     setShowPaywall(false);
     if (pendingPeriod) {
       setSelectedPeriod(pendingPeriod);
@@ -291,8 +314,16 @@ export const ChartScreen: React.FC = () => {
       setToCurrency(pendingToCurrency);
       setPendingToCurrency(null);
     }
-    // For now, just show alert
-    Alert.alert('Purchase', `Selected plan: ${planId}\n\nAdapty integration will be added here.`);
+  };
+
+  const handleRestore = async () => {
+    const result = await restoreAdaptyPurchases();
+    if (result.success) {
+      setShowPaywall(false);
+      Alert.alert('Restored', 'Your subscription has been restored.');
+      return;
+    }
+    Alert.alert('Restore', result.message);
   };
 
   const handleLockedAction = () => {
@@ -308,8 +339,9 @@ export const ChartScreen: React.FC = () => {
       {/* Paywall Modal */}
       <PaywallModal
         visible={showPaywall}
-        onClose={() => setShowPaywall(false)}
+        onClose={handleClosePaywall}
         onPurchase={handlePurchase}
+        onRestore={handleRestore}
       />
 
       {/* Header */}
@@ -331,6 +363,10 @@ export const ChartScreen: React.FC = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         scrollEnabled
+        onScroll={(event) => {
+          chartScrollOffsetYRef.current = event.nativeEvent.contentOffset.y;
+        }}
+        scrollEventThrottle={16}
         refreshControl={isPro ? (
           <RefreshControl
             refreshing={isRefreshing}
@@ -461,6 +497,9 @@ export const ChartScreen: React.FC = () => {
                 style={[
                   styles.periodButton,
                   selectedPeriod === period && styles.periodButtonActive,
+                  selectedPeriod === period && {
+                    backgroundColor: isDark ? colors.surfaceSecondary : 'rgba(0,0,0,0.05)',
+                  },
                 ]}
                 onPress={() => {
                   if (handleLockedAction()) {
@@ -486,7 +525,10 @@ export const ChartScreen: React.FC = () => {
         <View style={styles.currencySelectorsWrapper}>
           <View style={styles.currencySelectorsRow}>
             <TouchableOpacity 
-              style={styles.currencySelector}
+              style={[
+                styles.currencySelector,
+                { backgroundColor: isDark ? colors.surfaceSecondary : '#EBEDF0' },
+              ]}
               onPress={() => openPicker('from')}
             >
               <View style={[styles.selectorFlagCircle, { backgroundColor: getFlagBackground(fromCurrency) }]}>
@@ -497,7 +539,10 @@ export const ChartScreen: React.FC = () => {
             </TouchableOpacity>
 
             <TouchableOpacity 
-              style={styles.currencySelector}
+              style={[
+                styles.currencySelector,
+                { backgroundColor: isDark ? colors.surfaceSecondary : '#EBEDF0' },
+              ]}
               onPress={() => openPicker('to')}
             >
               <View style={[styles.selectorFlagCircle, { backgroundColor: getFlagBackground(toCurrency) }]}>
@@ -746,7 +791,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   periodButtonActive: {
-    backgroundColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: 'transparent',
   },
   periodText: {
     fontSize: 14,

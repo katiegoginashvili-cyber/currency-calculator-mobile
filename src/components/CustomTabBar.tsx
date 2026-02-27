@@ -48,7 +48,7 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({
   });
 
   // Colors based on theme
-  const barBackground = isDark ? colors.surface : '#1C1C1E';
+  const barBackground = isDark ? colors.surfaceSecondary : '#1C1C1E';
   const activeBackground = isDark ? colors.text : '#FFFFFF';
   const activeIconColor = isDark ? colors.surface : '#1C1C1E';
   const inactiveIconColor = isDark ? colors.textSecondary : '#8E8E93';

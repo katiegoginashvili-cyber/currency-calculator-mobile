@@ -16,7 +16,7 @@ import { SectionHeader } from '../components/SectionHeader';
 export const UpdateRatesSettingsScreen: React.FC = () => {
   const { colors } = useTheme();
   const navigation = useNavigation();
-  const { updateMode, lastUpdated, setUpdateMode, mockRefreshRates } =
+  const { updateMode, lastUpdated, setUpdateMode, refreshRates } =
     useCurrencyStore();
 
   const updateOptions: { label: string; value: UpdateMode; description: string }[] = [
@@ -32,8 +32,8 @@ export const UpdateRatesSettingsScreen: React.FC = () => {
     },
   ];
 
-  const handleRefresh = () => {
-    mockRefreshRates();
+  const handleRefresh = async () => {
+    await refreshRates();
   };
 
   return (
@@ -152,16 +152,19 @@ export const UpdateRatesSettingsScreen: React.FC = () => {
             <Text style={[styles.statusLabel, { color: colors.textSecondary }]}>
               Data source
             </Text>
-            <Text style={[styles.statusValue, { color: colors.text }]}>
-              Mock Data (Demo)
+            <Text
+              style={[styles.statusValue, styles.statusValueDataSource, { color: colors.text }]}
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
+              ExchangeRate-API (v6.exchangerate-api.com)
             </Text>
           </View>
         </View>
 
         <View style={styles.footer}>
           <Text style={[styles.footerText, { color: colors.textSecondary }]}>
-            Note: This is a demo app using mock exchange rates.{'\n'}
-            Rates are randomly adjusted by ±1% on refresh.
+            Live rates are fetched from ExchangeRate-API.
           </Text>
         </View>
       </ScrollView>
@@ -291,6 +294,11 @@ const styles = StyleSheet.create({
   },
   statusValue: {
     fontSize: 15,
+  },
+  statusValueDataSource: {
+    flexShrink: 1,
+    textAlign: 'right',
+    marginLeft: 12,
   },
   footer: {
     padding: 24,

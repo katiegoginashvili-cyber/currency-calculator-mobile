@@ -114,11 +114,10 @@ const regionToCurrency: Record<string, string> = {
 
 export const getLocalCurrency = (): string => {
   try {
-    // Get locale from the system
     const locale = Intl.DateTimeFormat().resolvedOptions().locale || 'en-US';
-    // Extract region code (e.g., 'en-US' -> 'US', 'ka-GE' -> 'GE')
-    const parts = locale.split('-');
-    const region = parts.length > 1 ? parts[parts.length - 1].toUpperCase() : 'US';
+    // Handles both "ka-GE" and "ka_GE" locale formats.
+    const match = locale.match(/[-_]([A-Za-z]{2})$/);
+    const region = (match?.[1] || 'US').toUpperCase();
     return regionToCurrency[region] || 'USD';
   } catch {
     return 'USD';

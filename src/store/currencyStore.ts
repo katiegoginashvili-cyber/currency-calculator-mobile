@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { mockRatesUSD } from '../data/currencies';
+import { getLocalCurrency, mockRatesUSD } from '../data/currencies';
 import { fetchExchangeRates } from '../api/exchangeRates';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
@@ -53,6 +53,7 @@ interface CurrencyState {
   toggleBoldText: () => void;
   toggleSystemSize: () => void;
   toggleLocationSuggestions: () => void;
+  applyLocationPreference: (enabled: boolean) => void;
   toggleInappCurrency: () => void;
   toggleAppealSounds: () => void;
   setUpdateMode: (mode: UpdateMode) => void;
@@ -196,6 +197,17 @@ export const useCurrencyStore = create<CurrencyState>()(
         set((state) => ({ locationSuggestions: !state.locationSuggestions }));
       },
 
+      applyLocationPreference: (enabled) => {
+        const localCurrency = getLocalCurrency();
+        const { selectedCurrencies } = get();
+        const withoutLocal = selectedCurrencies.filter((code) => code !== localCurrency);
+        set({
+          locationSuggestions: enabled,
+          selectedCurrencies: enabled ? [localCurrency, ...withoutLocal] : selectedCurrencies,
+          baseCurrency: enabled ? localCurrency : get().baseCurrency,
+        });
+      },
+
       toggleInappCurrency: () => {
         set((state) => ({ inappCurrency: !state.inappCurrency }));
       },
@@ -217,11 +229,14 @@ export const useCurrencyStore = create<CurrencyState>()(
       },
 
       refreshRates: async () => {
+        // #region agent log
+        fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'refresh-debug-run-1',hypothesisId:'H2',location:'currencyStore.ts:220',message:'refreshRates entered',data:{isRefreshing:get().isRefreshing},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
         set({ isRefreshing: true });
         try {
           const data = await fetchExchangeRates('USD');
           const today = getTodayDateString();
-          const { lastRefreshDate, refreshCount, isPro } = get();
+          const { lastRefreshDate, refreshCount } = get();
           
           // Update refresh count
           const newRefreshCount = lastRefreshDate === today ? refreshCount + 1 : 1;
@@ -233,9 +248,19 @@ export const useCurrencyStore = create<CurrencyState>()(
             refreshCount: newRefreshCount,
             lastRefreshDate: today,
           });
+          // #region agent log
+          fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'refresh-debug-run-1',hypothesisId:'H2',location:'currencyStore.ts:241',message:'refreshRates success',data:{newRefreshCount,lastRefreshDate:today},timestamp:Date.now()})}).catch(()=>{});
+          // #endregion
         } catch (error) {
           console.error('Failed to refresh rates:', error);
-          set({ isRefreshing: false });
+          // Always close pull-to-refresh state and update timestamp so UI doesn't look stuck.
+          set({
+            isRefreshing: false,
+            lastUpdated: `${getFormattedDate()} (cached)`,
+          });
+          // #region agent log
+          fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'refresh-debug-run-1',hypothesisId:'H2',location:'currencyStore.ts:251',message:'refreshRates failed and reset',data:{message:error instanceof Error ? error.message : 'unknown'},timestamp:Date.now()})}).catch(()=>{});
+          // #endregion
         }
       },
 

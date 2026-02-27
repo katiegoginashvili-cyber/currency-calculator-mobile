@@ -1,5 +1,4 @@
-const API_KEY = '1f7716e74c7ca1c39c61e497';
-const BASE_URL = 'https://v6.exchangerate-api.com/v6';
+const RATES_PROXY_BASE = 'https://us-central1-currencycalculator-d4998.cloudfunctions.net';
 
 export interface ExchangeRateResponse {
   result: string;
@@ -23,8 +22,24 @@ export interface ChartDataPoint {
   rate: number;
 }
 
+const REQUEST_TIMEOUT_MS = 8000;
+
+const fetchWithTimeout = async (url: string, options?: RequestInit): Promise<Response> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...(options ?? {}), signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+};
+
 export const fetchExchangeRates = async (baseCurrency: string = 'USD'): Promise<ExchangeRateResponse> => {
-  const response = await fetch(`${BASE_URL}/${API_KEY}/latest/${baseCurrency}`);
+  const response = await fetchWithTimeout(`${RATES_PROXY_BASE}/getLatestRates`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ baseCurrency }),
+  });
   
   if (!response.ok) {
     throw new Error(`Failed to fetch exchange rates: ${response.status}`);
@@ -45,9 +60,11 @@ export const fetchHistoricalRate = async (
   month: number,
   day: number
 ): Promise<HistoricalRateResponse> => {
-  const response = await fetch(
-    `${BASE_URL}/${API_KEY}/history/${baseCurrency}/${year}/${month}/${day}`
-  );
+  const response = await fetchWithTimeout(`${RATES_PROXY_BASE}/getHistoricalRates`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ baseCurrency, year, month, day }),
+  });
   
   if (!response.ok) {
     throw new Error(`Failed to fetch historical rates: ${response.status}`);

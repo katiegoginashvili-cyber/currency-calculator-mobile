@@ -1,5 +1,3 @@
-import Constants from 'expo-constants';
-
 export type AiPriceScanResult = {
   amount: number | null;
   currencyCode: string | null;
@@ -7,27 +5,8 @@ export type AiPriceScanResult = {
   reason: string;
 };
 
-const AI_ENDPOINT = 'https://api.openai.com/v1/responses';
-
-const resolveOpenAiKey = (): string | undefined => {
-  const manifest = (Constants as any)?.manifest;
-  const manifest2 = (Constants as any)?.manifest2;
-
-  const fromExpoConfig = Constants.expoConfig?.extra?.openaiApiKey as string | undefined;
-  const fromManifest = manifest?.extra?.openaiApiKey as string | undefined;
-  const fromManifest2 = manifest2?.extra?.expoClient?.extra?.openaiApiKey as string | undefined;
-  const fromPublicEnv = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
-  let fromBundledAppJson: string | undefined;
-
-  try {
-    const appJson = require('../../app.json') as { expo?: { extra?: { openaiApiKey?: string } } };
-    fromBundledAppJson = appJson?.expo?.extra?.openaiApiKey;
-  } catch {
-    fromBundledAppJson = undefined;
-  }
-
-  return fromExpoConfig || fromManifest || fromManifest2 || fromPublicEnv || fromBundledAppJson;
-};
+const AI_PROXY_ENDPOINT =
+  'https://us-central1-currencycalculator-d4998.cloudfunctions.net/aiScanPrice';
 
 const clampConfidence = (value: unknown): number => {
   const parsed = Number(value);
@@ -42,62 +21,13 @@ const normalizeCurrency = (value: unknown): string | null => {
 };
 
 export const analyzePriceFromPhotoWithAI = async (base64Image: string): Promise<AiPriceScanResult> => {
-  const apiKey = resolveOpenAiKey();
-  if (!apiKey) {
-    throw new Error('Missing OpenAI key (checked expoConfig/manifest/manifest2/env/app.json)');
-  }
-
-  const response = await fetch(AI_ENDPOINT, {
+  const response = await fetch(AI_PROXY_ENDPOINT, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'gpt-4.1-mini',
-      input: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'input_text',
-              text: [
-                'Analyze this product price label photo.',
-                'Return STRICT JSON only with this schema:',
-                '{"amount": number|null, "currencyCode": "USD"|...|null, "confidence": 0..1, "reason": string, "isOldPrice": boolean}',
-                'Rules:',
-                '- Prefer current/main price over old/strikethrough/was price.',
-                '- If only old price exists, set amount null and isOldPrice true.',
-                '- currencyCode must be ISO-4217 3-letter code or null.',
-                '- No markdown, no extra text.',
-              ].join(' '),
-            },
-            {
-              type: 'input_image',
-              image_url: `data:image/jpeg;base64,${base64Image}`,
-            },
-          ],
-        },
-      ],
-      text: {
-        format: {
-          type: 'json_schema',
-          name: 'price_scan',
-          schema: {
-            type: 'object',
-            additionalProperties: false,
-            required: ['amount', 'currencyCode', 'confidence', 'reason', 'isOldPrice'],
-            properties: {
-              amount: { type: ['number', 'null'] },
-              currencyCode: { type: ['string', 'null'] },
-              confidence: { type: 'number' },
-              reason: { type: 'string' },
-              isOldPrice: { type: 'boolean' },
-            },
-          },
-        },
-      },
-      max_output_tokens: 250,
+      base64Image,
     }),
   });
 

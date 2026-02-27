@@ -23,6 +23,7 @@ import { getConvertedAmount, useCurrencyStore } from '../store/currencyStore';
 import { analyzePriceFromPhotoWithAI } from '../services/aiPriceScan';
 import type { RootStackParamList } from '../navigation/types';
 import { PaywallModal } from '../components/PaywallModal';
+import { purchaseAdaptyPlan, restoreAdaptyPurchases } from '../services/adapty';
 
 const isExpoGo = Constants.appOwnership === 'expo';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -255,10 +256,25 @@ export const ScanScreen: React.FC = () => {
     }
   };
 
-  const handlePurchase = (planId: string) => {
-    console.log('Purchase plan:', planId);
-    setShowPaywall(false);
-    Alert.alert('Purchase', `Selected plan: ${planId}\n\nAdapty integration will be added here.`);
+  const handlePurchase = async (planId: string) => {
+    const result = await purchaseAdaptyPlan(planId);
+    if (result.success) {
+      setShowPaywall(false);
+      return;
+    }
+    if (!result.cancelled) {
+      Alert.alert('Purchase failed', result.message);
+    }
+  };
+
+  const handleRestore = async () => {
+    const result = await restoreAdaptyPurchases();
+    if (result.success) {
+      setShowPaywall(false);
+      Alert.alert('Restored', 'Your subscription has been restored.');
+      return;
+    }
+    Alert.alert('Restore', result.message);
   };
 
   return (
@@ -405,6 +421,7 @@ export const ScanScreen: React.FC = () => {
         visible={showPaywall}
         onClose={() => setShowPaywall(false)}
         onPurchase={handlePurchase}
+        onRestore={handleRestore}
       />
     </View>
   );
