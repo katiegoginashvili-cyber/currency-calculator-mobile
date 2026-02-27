@@ -347,7 +347,15 @@ export const ChartScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>Charts</Text>
-        {isPro && (
+        {!isPro ? (
+          <TouchableOpacity
+            style={[styles.getProBadge, { backgroundColor: colors.primary }]}
+            onPress={handleUpgrade}
+          >
+            <MaterialIcons name="star" size={14} color="#FFFFFF" />
+            <Text style={styles.getProText}>Go Pro</Text>
+          </TouchableOpacity>
+        ) : (
           <TouchableOpacity 
             style={styles.alertButton}
             onPress={() => Alert.alert('Coming soon', 'This feature will be available soon.')}
@@ -771,6 +779,20 @@ const styles = StyleSheet.create({
   alertButtonText: {
     fontSize: 15,
     fontWeight: '600',
+  },
+  getProBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 18,
+  },
+  getProText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   horizontalDivider: {
     height: 1,

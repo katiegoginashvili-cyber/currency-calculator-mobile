@@ -13,7 +13,9 @@ import { ScanScreen } from '../screens/ScanScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { LegalDocumentScreen } from '../screens/LegalDocumentScreen';
 import { RootStackParamList } from './types';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Alert } from 'react-native';
+import { PaywallModal } from '../components/PaywallModal';
+import { purchaseAdaptyPlan, restoreAdaptyPurchases } from '../services/adapty';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -21,6 +23,7 @@ export const RootNavigator: React.FC = () => {
   const { colors } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showLaunchPaywall, setShowLaunchPaywall] = useState(false);
   const loadingStartMsRef = useRef<number>(Date.now());
 
   useEffect(() => {
@@ -92,7 +95,7 @@ export const RootNavigator: React.FC = () => {
         timestamp: Date.now(),
       }));
       // #endregion
-      const shouldShowOnboarding = onboardingComplete === 'false';
+      const shouldShowOnboarding = onboardingComplete !== 'true';
       // #region agent log
       console.log('[SplashDebug]', JSON.stringify({
         runId: 'splash-console-run-1',
@@ -104,6 +107,7 @@ export const RootNavigator: React.FC = () => {
       }));
       // #endregion
       setShowOnboarding(shouldShowOnboarding);
+      setShowLaunchPaywall(!shouldShowOnboarding);
     } catch (error) {
       console.error('Error checking onboarding status:', error);
     } finally {
@@ -113,6 +117,30 @@ export const RootNavigator: React.FC = () => {
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
+  };
+
+  const handleLaunchPaywallClose = () => {
+    setShowLaunchPaywall(false);
+  };
+
+  const handleLaunchPaywallPurchase = async (planId: string) => {
+    const result = await purchaseAdaptyPlan(planId);
+    if (!result.success) {
+      if (!result.cancelled) {
+        Alert.alert('Purchase failed', result.message);
+      }
+      return;
+    }
+    setShowLaunchPaywall(false);
+  };
+
+  const handleLaunchPaywallRestore = async () => {
+    const result = await restoreAdaptyPurchases();
+    if (!result.success) {
+      Alert.alert('Restore', result.message);
+      return;
+    }
+    setShowLaunchPaywall(false);
   };
 
   if (isLoading) {
@@ -128,88 +156,97 @@ export const RootNavigator: React.FC = () => {
   }
 
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: colors.background },
-      }}
-    >
-      <Stack.Screen name="MainTabs" component={TabNavigator} />
-      <Stack.Screen
-        name="AmountKeypad"
-        component={AmountKeypadScreen}
-        options={{
-          presentation: 'transparentModal',
-          animation: 'none',
-          contentStyle: { backgroundColor: 'transparent' },
-        }}
-      />
-      <Stack.Screen
-        name="AddCurrency"
-        component={AddCurrencyScreen}
-        options={{
-          presentation: 'modal',
-          animation: 'slide_from_bottom',
-        }}
-      />
-      <Stack.Screen
-        name="EditCurrencies"
-        component={EditCurrenciesScreen}
-        options={{
-          presentation: 'fullScreenModal',
-          animation: 'slide_from_bottom',
-        }}
-      />
-      <Stack.Screen
-        name="Settings"
-        component={SettingsScreen}
-        options={{
-          presentation: 'card',
-          animation: 'slide_from_right',
-        }}
-      />
-      <Stack.Screen
-        name="ScanModal"
-        component={ScanScreen}
-        options={{
-          presentation: 'transparentModal',
-          animation: 'slide_from_bottom',
-          contentStyle: { backgroundColor: 'transparent' },
-        }}
-      />
-      <Stack.Screen
-        name="DisplaySettings"
-        component={DisplaySettingsScreen}
-        options={{
-          presentation: 'card',
-          animation: 'slide_from_right',
-        }}
-      />
-      <Stack.Screen
-        name="UpdateRatesSettings"
-        component={UpdateRatesSettingsScreen}
-        options={{
-          presentation: 'card',
-          animation: 'slide_from_right',
-        }}
-      />
-      <Stack.Screen
-        name="LegalDocument"
-        component={LegalDocumentScreen}
-        options={{
-          presentation: 'card',
-          animation: 'slide_from_right',
-        }}
-      />
-      <Stack.Screen
-        name="OnboardingPreview"
-        options={{
-          presentation: 'card',
-          animation: 'slide_from_right',
+    <>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: colors.background },
         }}
       >
-        {() => <OnboardingScreen onComplete={() => {}} />}
-      </Stack.Screen>
-    </Stack.Navigator>
+        <Stack.Screen name="MainTabs" component={TabNavigator} />
+        <Stack.Screen
+          name="AmountKeypad"
+          component={AmountKeypadScreen}
+          options={{
+            presentation: 'transparentModal',
+            animation: 'none',
+            contentStyle: { backgroundColor: 'transparent' },
+          }}
+        />
+        <Stack.Screen
+          name="AddCurrency"
+          component={AddCurrencyScreen}
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="EditCurrencies"
+          component={EditCurrenciesScreen}
+          options={{
+            presentation: 'fullScreenModal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{
+            presentation: 'card',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="ScanModal"
+          component={ScanScreen}
+          options={{
+            presentation: 'transparentModal',
+            animation: 'slide_from_bottom',
+            contentStyle: { backgroundColor: 'transparent' },
+          }}
+        />
+        <Stack.Screen
+          name="DisplaySettings"
+          component={DisplaySettingsScreen}
+          options={{
+            presentation: 'card',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="UpdateRatesSettings"
+          component={UpdateRatesSettingsScreen}
+          options={{
+            presentation: 'card',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="LegalDocument"
+          component={LegalDocumentScreen}
+          options={{
+            presentation: 'card',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="OnboardingPreview"
+          options={{
+            presentation: 'card',
+            animation: 'slide_from_right',
+          }}
+        >
+          {() => <OnboardingScreen onComplete={() => {}} />}
+        </Stack.Screen>
+      </Stack.Navigator>
+
+      <PaywallModal
+        visible={showLaunchPaywall}
+        onClose={handleLaunchPaywallClose}
+        onPurchase={handleLaunchPaywallPurchase}
+        onRestore={handleLaunchPaywallRestore}
+      />
+    </>
   );
 };

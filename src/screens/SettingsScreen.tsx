@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, Linking, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -8,6 +8,8 @@ import { useTheme } from '../theme/ThemeContext';
 import { useCurrencyStore } from '../store/currencyStore';
 import { SettingsRow } from '../components/SettingsRow';
 import { SectionHeader } from '../components/SectionHeader';
+import { PaywallModal } from '../components/PaywallModal';
+import { purchaseAdaptyPlan, restoreAdaptyPurchases } from '../services/adapty';
 import type { RootStackParamList } from '../navigation/types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -19,7 +21,9 @@ export const SettingsScreen: React.FC = () => {
   const {
     locationSuggestions,
     toggleLocationSuggestions,
+    isPro,
   } = useCurrencyStore();
+  const [showPaywall, setShowPaywall] = React.useState(false);
 
   const legalText = `By downloading or using this application (“App”), you agree to the following Terms of Service. If you do not agree, please do not use the App.
 
@@ -238,10 +242,45 @@ appsmajestic@gmail.com`;
     await Linking.openURL(supported ? appStoreReviewUrl : fallbackUrl);
   };
 
+  const handlePurchase = async (planId: string) => {
+    const result = await purchaseAdaptyPlan(planId);
+    if (!result.success) {
+      if (!result.cancelled) {
+        Alert.alert('Purchase failed', result.message);
+      }
+      return;
+    }
+    setShowPaywall(false);
+  };
+
+  const handleRestore = async () => {
+    const result = await restoreAdaptyPurchases();
+    if (!result.success) {
+      Alert.alert('Restore', result.message);
+      return;
+    }
+    setShowPaywall(false);
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+      <PaywallModal
+        visible={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        onPurchase={handlePurchase}
+        onRestore={handleRestore}
+      />
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>Settings</Text>
+        {!isPro ? (
+          <TouchableOpacity
+            style={[styles.getProBadge, { backgroundColor: colors.primary }]}
+            onPress={() => setShowPaywall(true)}
+          >
+            <MaterialIcons name="star" size={14} color="#FFFFFF" />
+            <Text style={styles.getProText}>Go Pro</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -264,14 +303,6 @@ appsmajestic@gmail.com`;
             onPress={() => navigation.navigate('UpdateRatesSettings')}
             showArrow
             leftIcon={<MaterialIcons name="sync" size={22} color={colors.primary} />}
-          />
-          <View style={[styles.separator, { backgroundColor: colors.separator, marginLeft: 54 }]} />
-          <SettingsRow
-            title="Onboarding Preview"
-            subtitle="View onboarding screens again"
-            onPress={() => navigation.navigate('OnboardingPreview')}
-            showArrow
-            leftIcon={<MaterialIcons name="slideshow" size={22} color={colors.primary} />}
           />
         </View>
 
@@ -342,6 +373,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 8,
@@ -349,6 +383,20 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '700',
+  },
+  getProBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 18,
+  },
+  getProText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   scrollView: {
     flex: 1,

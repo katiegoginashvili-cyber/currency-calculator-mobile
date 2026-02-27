@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Dimensions,
   Image,
   ScrollView,
+  AppState,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -61,14 +62,50 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
   const [selectedPlan, setSelectedPlan] = useState('annual');
   const [isProcessingPurchase, setIsProcessingPurchase] = useState(false);
   const [isProcessingRestore, setIsProcessingRestore] = useState(false);
+  const purchaseStartRef = useRef<number | null>(null);
+  const appStateRef = useRef(AppState.currentState);
+
+  useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'paywall-processing-debug-1',hypothesisId:'H3',location:'PaywallModal.tsx:67',message:'Paywall visibility/state snapshot',data:{visible,selectedPlan,isProcessingPurchase,isProcessingRestore},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+  }, [visible, selectedPlan, isProcessingPurchase, isProcessingRestore]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      const prevState = appStateRef.current;
+      appStateRef.current = nextState;
+      // #region agent log
+      fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'paywall-processing-debug-2',hypothesisId:'H4',location:'PaywallModal.tsx:90',message:'AppState changed while paywall open',data:{prevState,nextState,visible,isProcessingPurchase},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+      if (visible && isProcessingPurchase && nextState === 'active') {
+        setIsProcessingPurchase(false);
+        // #region agent log
+        fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'paywall-processing-debug-2',hypothesisId:'H4',location:'PaywallModal.tsx:94',message:'Processing reset on app active',data:{elapsedMs:purchaseStartRef.current ? Date.now() - purchaseStartRef.current : null},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
+      }
+    });
+    return () => subscription.remove();
+  }, [visible, isProcessingPurchase]);
 
   const handleSubscribe = async () => {
     if (isProcessingPurchase || isProcessingRestore) return;
     try {
+      purchaseStartRef.current = Date.now();
+      // #region agent log
+      fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'paywall-processing-debug-1',hypothesisId:'H1',location:'PaywallModal.tsx:74',message:'Subscribe pressed - purchase started',data:{selectedPlan,visible,isProcessingPurchase,isProcessingRestore},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
       setIsProcessingPurchase(true);
       await onPurchase(selectedPlan);
+      // #region agent log
+      fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'paywall-processing-debug-1',hypothesisId:'H1',location:'PaywallModal.tsx:79',message:'onPurchase promise settled',data:{selectedPlan,elapsedMs:purchaseStartRef.current ? Date.now() - purchaseStartRef.current : null},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
     } finally {
       setIsProcessingPurchase(false);
+      // #region agent log
+      fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'paywall-processing-debug-1',hypothesisId:'H2',location:'PaywallModal.tsx:84',message:'Processing flag reset in finally',data:{selectedPlan,elapsedMs:purchaseStartRef.current ? Date.now() - purchaseStartRef.current : null},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+      purchaseStartRef.current = null;
     }
   };
 

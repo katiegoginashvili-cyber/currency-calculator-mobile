@@ -203,6 +203,7 @@ export const purchaseAdaptyPlan = async (planId: string): Promise<AdaptyResult> 
   const sdk = adapty as any;
 
   try {
+    const purchaseStartedAt = Date.now();
     const products = await fetchPlacementProducts();
     const selectedProduct = products[planId];
     const selectedVendorProductId = resolveVendorProductId(selectedProduct);
@@ -213,6 +214,26 @@ export const purchaseAdaptyPlan = async (planId: string): Promise<AdaptyResult> 
       selectedProductKeys: selectedProduct ? Object.keys(selectedProduct).slice(0, 20) : [],
     });
     const purchaseResult = await sdk.makePurchase(selectedProduct);
+    const purchaseType =
+      typeof purchaseResult?.type === 'string' ? purchaseResult.type : null;
+    emitAdaptyPurchaseDebug('H6', 'adapty.ts:168', 'Raw makePurchase result snapshot', {
+      requestedPlanId: planId,
+      elapsedMs: Date.now() - purchaseStartedAt,
+      purchaseType,
+      resultKeys: purchaseResult && typeof purchaseResult === 'object' ? Object.keys(purchaseResult).slice(0, 20) : [],
+      hasProfile: !!purchaseResult?.profile,
+      profileAccessLevelKeys: purchaseResult?.profile?.accessLevels
+        ? Object.keys(purchaseResult.profile.accessLevels).slice(0, 10)
+        : [],
+    });
+    if (purchaseType && purchaseType.toLowerCase().includes('cancel')) {
+      emitAdaptyPurchaseDebug('H8', 'adapty.ts:177', 'Purchase cancelled by purchase type', {
+        requestedPlanId: planId,
+        purchaseType,
+        elapsedMs: Date.now() - purchaseStartedAt,
+      });
+      return { success: false, cancelled: true, message: 'Purchase cancelled.' };
+    }
     const profile = purchaseResult?.profile ?? (await sdk.getProfile());
     const isPro = resolveIsProFromProfile(profile);
     emitAdaptyPurchaseDebug('H5', 'adapty.ts:170', 'Adapty purchase completed', {
@@ -223,6 +244,11 @@ export const purchaseAdaptyPlan = async (planId: string): Promise<AdaptyResult> 
     setProStatus(isPro);
 
     if (!isPro) {
+      emitAdaptyPurchaseDebug('H7', 'adapty.ts:182', 'Purchase resolved without active PRO', {
+        requestedPlanId: planId,
+        elapsedMs: Date.now() - purchaseStartedAt,
+        profileAccessLevelKeys: profile?.accessLevels ? Object.keys(profile.accessLevels).slice(0, 10) : [],
+      });
       return {
         success: false,
         message: 'Purchase completed but premium access is not active yet. Please try Restore.',
