@@ -182,13 +182,7 @@ export const ChartScreen: React.FC = () => {
   };
 
   const handleRefresh = async () => {
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'refresh-debug-run-1',hypothesisId:'H4',location:'ChartScreen.tsx:183',message:'chart pull-to-refresh triggered',data:{isRefreshing,showPaywall,isPro},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     if (handleLockedAction()) {
-      // #region agent log
-      fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'refresh-debug-run-1',hypothesisId:'H4',location:'ChartScreen.tsx:186',message:'chart refresh blocked by paywall',data:{isRefreshingAfterBlock:isRefreshing},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
       return;
     }
     await refreshRates();
@@ -284,12 +278,6 @@ export const ChartScreen: React.FC = () => {
   };
 
   const handleClosePaywall = () => {
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'refresh-debug-run-2',hypothesisId:'H7',location:'ChartScreen.tsx:281',message:'chart paywall close requested',data:{scrollOffsetY:chartScrollOffsetYRef.current,isRefreshing:useCurrencyStore.getState().isRefreshing,showPaywall},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
-    // #region agent log
-    console.log('[RefreshDebug]', JSON.stringify({runId:'refresh-console-run-2',hypothesisId:'H7',location:'ChartScreen.tsx:281',message:'chart paywall close requested',data:{scrollOffsetY:chartScrollOffsetYRef.current,isRefreshing:useCurrencyStore.getState().isRefreshing,showPaywall},timestamp:Date.now()}));
-    // #endregion
     setShowPaywall(false);
   };
 

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Currency Calculator",
+    "name": "Currency PRO",
     "slug": "currency-calculator",
     "scheme": "currencycalculator",
     "version": "1.0.0",
@@ -9,7 +9,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/icon.png",
+      "image": "./assets/splash-rounded.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -39,6 +39,7 @@
     },
     "extra": {
       "adaptyPublicSdkKey": "public_live_8ipuIHkZ.s3mhL0nY1gVCkGJwDnKy",
+      "clarityProjectId": "vo9tx3dxpm",
       "eas": {
         "projectId": "ac8fdf93-b552-4f7f-9e6b-e3bbee760687"
       }

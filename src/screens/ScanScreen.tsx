@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -26,23 +26,8 @@ import { PaywallModal } from '../components/PaywallModal';
 import { purchaseAdaptyPlan, restoreAdaptyPurchases } from '../services/adapty';
 
 const isExpoGo = Constants.appOwnership === 'expo';
+const FIAT_CURRENCIES = currencies.filter((item) => item.category === 'fiat');
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
-const emitAgentLog = (hypothesisId: string, location: string, message: string, data: Record<string, unknown>) => {
-  const payload = {
-    runId: 'scan-live-convert-debug-1',
-    hypothesisId,
-    location,
-    message,
-    data,
-    timestamp: Date.now(),
-  };
-  fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(()=>{});
-  // #region agent log
-  console.log('[ScanDebug]', JSON.stringify(payload));
-  // #endregion
-};
-
 
 export const ScanScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -75,24 +60,16 @@ export const ScanScreen: React.FC = () => {
     return getConvertedAmount(inputAmount, fromCurrency, toCurrency, rates);
   }, [inputAmount, fromCurrency, toCurrency, rates]);
 
-  const fiatCurrencies = currencies.filter((item) => item.category === 'fiat');
-  const filteredCurrencies = searchQuery
-    ? fiatCurrencies.filter(
-        (item) =>
-          item.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.name.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
-    : fiatCurrencies;
+  const filteredCurrencies = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    if (!normalizedQuery) return FIAT_CURRENCIES;
+    return FIAT_CURRENCIES.filter(
+      (item) =>
+        item.code.toLowerCase().includes(normalizedQuery) ||
+        item.name.toLowerCase().includes(normalizedQuery),
+    );
+  }, [searchQuery]);
 
-  // #region agent log
-  useEffect(() => {
-    emitAgentLog('H1', 'ScanScreen.tsx:159', 'Scan screen mounted (AI-only mode)', {
-      isExpoGo,
-      appOwnership: Constants.appOwnership ?? null,
-    });
-    return undefined;
-  }, []);
-  // #endregion
 
   const openPicker = (type: 'from' | 'to') => {
     setPickingFor(type);
@@ -190,11 +167,6 @@ export const ScanScreen: React.FC = () => {
     setIsAiScanning(true);
     setAiHint('');
     try {
-      // #region agent log
-      emitAgentLog('H10', 'ScanScreen.tsx:495', 'AI scan requested', {
-        hasCameraRef: !!cameraRef.current,
-      });
-      // #endregion
 
       const photo = await cameraRef.current.takePictureAsync({
         base64: true,
@@ -206,21 +178,9 @@ export const ScanScreen: React.FC = () => {
         throw new Error('AI scan photo missing base64');
       }
 
-      // #region agent log
-      emitAgentLog('H10', 'ScanScreen.tsx:511', 'AI scan photo captured', {
-        base64Length: photo.base64.length,
-      });
-      // #endregion
 
       const aiResult = await analyzePriceFromPhotoWithAI(photo.base64);
 
-      // #region agent log
-      emitAgentLog('H10', 'ScanScreen.tsx:519', 'AI scan result received', {
-        amount: aiResult.amount,
-        currencyCode: aiResult.currencyCode,
-        confidence: aiResult.confidence,
-      });
-      // #endregion
 
       if (aiResult.currencyCode && aiResult.currencyCode !== fromCurrency) {
         setFromCurrency(aiResult.currencyCode);
@@ -245,11 +205,6 @@ export const ScanScreen: React.FC = () => {
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      // #region agent log
-      emitAgentLog('H10', 'ScanScreen.tsx:544', 'AI scan failed', {
-        error: message,
-      });
-      // #endregion
       setAiHint(`AI სკანი ვერ შესრულდა: ${message}`);
     } finally {
       setIsAiScanning(false);

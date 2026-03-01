@@ -81,34 +81,19 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
 
   useEffect(() => {
     if (!isDark) return;
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'onboarding-gradient-debug-post-fix-1',hypothesisId:'H1',location:'OnboardingScreen.tsx:78',message:'Onboarding dark gradient config snapshot',data:{currentIndex,isDark,background:colors.background,imageOpacity:DARK_IMAGE_OPACITY,darkTopBlendHeight,darkBottomBlendHeight,topStartAlpha:DARK_TOP_BLEND_START_ALPHA,bottomEndAlpha:DARK_BOTTOM_BLEND_END_ALPHA},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
-    // #region agent log
-    console.log('[OnboardingDebug]', JSON.stringify({runId:'onboarding-console-run-1',hypothesisId:'H1',location:'OnboardingScreen.tsx:75',message:'Onboarding dark gradient config snapshot',data:{currentIndex,isDark,background:colors.background,imageOpacity:DARK_IMAGE_OPACITY,darkTopBlendHeight,darkBottomBlendHeight,topStartAlpha:DARK_TOP_BLEND_START_ALPHA,topEndAlpha:DARK_TOP_BLEND_END_ALPHA,bottomStartAlpha:DARK_BOTTOM_BLEND_START_ALPHA,bottomEndAlpha:DARK_BOTTOM_BLEND_END_ALPHA},timestamp:Date.now()}));
-    // #endregion
   }, [currentIndex, isDark, colors.background]);
 
   useEffect(() => {
     if (!isDark) return;
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'onboarding-gradient-debug-1',hypothesisId:'H2',location:'OnboardingScreen.tsx:86',message:'Theme palette snapshot for blend comparison',data:{background:colors.background,surface:colors.surface,text:colors.text,textSecondary:colors.textSecondary,currentSlide:ONBOARDING_SLIDES[currentIndex]?.id},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
   }, [isDark, colors.background, colors.surface, colors.text, colors.textSecondary, currentIndex]);
 
   useEffect(() => {
     if (!isDark) return;
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'onboarding-gradient-debug-post-fix-1',hypothesisId:'H3',location:'OnboardingScreen.tsx:96',message:'Active onboarding visual type snapshot',data:{currentIndex,visualType:ONBOARDING_SLIDES[currentIndex]?.visualType,imageMode:'cover',imageOpacityDark:DARK_IMAGE_OPACITY},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
   }, [isDark, currentIndex]);
 
   useEffect(() => {
     if (!isDark) return;
     const estimatedOverlapPx = Math.max(0, darkTopBlendHeight + darkBottomBlendHeight - 380);
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'onboarding-gradient-debug-post-fix-2',hypothesisId:'H6',location:'OnboardingScreen.tsx:112',message:'Gradient overlap risk snapshot',data:{darkTopBlendHeight,darkBottomBlendHeight,imageHeight:380,estimatedOverlapPx,topEndAlpha:DARK_TOP_BLEND_END_ALPHA,bottomStartAlpha:DARK_BOTTOM_BLEND_START_ALPHA},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
   }, [isDark, darkTopBlendHeight, darkBottomBlendHeight]);
 
   const handleNext = async () => {
@@ -196,9 +181,6 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
           if (!isDark || hasLoggedImageLayout.current) return;
           hasLoggedImageLayout.current = true;
           const { width: layoutWidth, height: layoutHeight, x, y } = event.nativeEvent.layout;
-          // #region agent log
-          fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'onboarding-gradient-debug-1',hypothesisId:'H4',location:'OnboardingScreen.tsx:171',message:'Image container layout in dark mode',data:{layoutWidth,layoutHeight,x,y,darkTopBlendHeight,darkBottomBlendHeight},timestamp:Date.now()})}).catch(()=>{});
-          // #endregion
         }}
       >
         <Image
@@ -288,9 +270,6 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
         if (!isDark || hasLoggedRootLayout.current) return;
         hasLoggedRootLayout.current = true;
         const { width: layoutWidth, height: layoutHeight } = event.nativeEvent.layout;
-        // #region agent log
-        fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'onboarding-gradient-debug-1',hypothesisId:'H5',location:'OnboardingScreen.tsx:266',message:'Onboarding root layout in dark mode',data:{layoutWidth,layoutHeight,safeAreaTop:insets.top,safeAreaBottom:insets.bottom},timestamp:Date.now()})}).catch(()=>{});
-        // #endregion
       }}
     >
       {/* Skip Button */}

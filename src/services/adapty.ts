@@ -19,28 +19,6 @@ type AdaptyResult = {
   message: string;
 };
 
-const emitAdaptyPurchaseDebug = (
-  hypothesisId: string,
-  location: string,
-  message: string,
-  data: Record<string, unknown>,
-) => {
-  const payload = {
-    runId: 'adapty-purchase-debug-1',
-    hypothesisId,
-    location,
-    message,
-    data,
-    timestamp: Date.now(),
-  };
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',...payload})}).catch(()=>{});
-  // #endregion
-  // #region agent log
-  console.log('[AdaptyPurchaseDebug]', JSON.stringify(payload));
-  // #endregion
-};
-
 const normalizeAdaptyErrorMessage = (error: any): string => {
   const fallback =
     error instanceof Error
@@ -97,24 +75,8 @@ const setProStatus = (isPro: boolean) => {
 
 const fetchPlacementProducts = async (): Promise<Record<AdaptyPlanId, any>> => {
   const sdk = adapty as any;
-  emitAdaptyPurchaseDebug('H1', 'adapty.ts:52', 'Fetching paywall placement', {
-    placementId: ADAPTY_PLACEMENT_ID,
-  });
   const paywall = await sdk.getPaywall(ADAPTY_PLACEMENT_ID);
-  emitAdaptyPurchaseDebug('H1', 'adapty.ts:56', 'Paywall fetched', {
-    placementId: ADAPTY_PLACEMENT_ID,
-    hasPaywall: !!paywall,
-    paywallId: typeof paywall?.id === 'string' ? paywall.id : null,
-    variationId: typeof paywall?.variationId === 'string' ? paywall.variationId : null,
-    vendorProductIdsCount: Array.isArray(paywall?.vendorProductIds) ? paywall.vendorProductIds.length : null,
-  });
   const products = await sdk.getPaywallProducts(paywall);
-  emitAdaptyPurchaseDebug('H2', 'adapty.ts:64', 'Paywall products fetched', {
-    fetchedCount: Array.isArray(products) ? products.length : null,
-    fetchedVendorProductIds: Array.isArray(products)
-      ? products.map((product: any) => resolveVendorProductId(product)).filter(Boolean).slice(0, 10)
-      : [],
-  });
   const byId = new Map<string, any>();
 
   for (const product of products ?? []) {
@@ -148,9 +110,6 @@ export const syncAdaptyProStatus = async (): Promise<boolean> => {
 };
 
 export const initializeAdapty = async (): Promise<void> => {
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'splash-debug-run-4',hypothesisId:'H13',location:'adapty.ts:7',message:'Adapty init entered',data:{alreadyInitialized:isAdaptyInitialized,appOwnership:Constants.appOwnership ?? null,hasSdkKey:!!Constants.expoConfig?.extra?.adaptyPublicSdkKey},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
   if (isAdaptyInitialized) {
     return;
   }
@@ -177,9 +136,6 @@ export const initializeAdapty = async (): Promise<void> => {
     } catch (profileError) {
       console.warn('[Adapty] Failed to sync initial profile state', profileError);
     }
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'splash-debug-run-4',hypothesisId:'H13',location:'adapty.ts:30',message:'Adapty activate success',data:{},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
   } catch (error) {
     const err: any = error;
     if (err?.adaptyCode === 3005 || String(err?.message ?? '').includes('activateOnceError')) {
@@ -187,9 +143,6 @@ export const initializeAdapty = async (): Promise<void> => {
       isAdaptyInitialized = true;
       return;
     }
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'splash-debug-run-4',hypothesisId:'H13',location:'adapty.ts:34',message:'Adapty activate failed',data:{message:error instanceof Error ? error.message : 'unknown'},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     console.warn('[Adapty] Failed to activate SDK', error);
   }
 };
@@ -203,52 +156,19 @@ export const purchaseAdaptyPlan = async (planId: string): Promise<AdaptyResult> 
   const sdk = adapty as any;
 
   try {
-    const purchaseStartedAt = Date.now();
     const products = await fetchPlacementProducts();
     const selectedProduct = products[planId];
-    const selectedVendorProductId = resolveVendorProductId(selectedProduct);
-    emitAdaptyPurchaseDebug('H3', 'adapty.ts:161', 'About to make Adapty purchase', {
-      requestedPlanId: planId,
-      mappedProductId: ADAPTY_PRODUCT_IDS[planId],
-      selectedVendorProductId,
-      selectedProductKeys: selectedProduct ? Object.keys(selectedProduct).slice(0, 20) : [],
-    });
     const purchaseResult = await sdk.makePurchase(selectedProduct);
     const purchaseType =
       typeof purchaseResult?.type === 'string' ? purchaseResult.type : null;
-    emitAdaptyPurchaseDebug('H6', 'adapty.ts:168', 'Raw makePurchase result snapshot', {
-      requestedPlanId: planId,
-      elapsedMs: Date.now() - purchaseStartedAt,
-      purchaseType,
-      resultKeys: purchaseResult && typeof purchaseResult === 'object' ? Object.keys(purchaseResult).slice(0, 20) : [],
-      hasProfile: !!purchaseResult?.profile,
-      profileAccessLevelKeys: purchaseResult?.profile?.accessLevels
-        ? Object.keys(purchaseResult.profile.accessLevels).slice(0, 10)
-        : [],
-    });
     if (purchaseType && purchaseType.toLowerCase().includes('cancel')) {
-      emitAdaptyPurchaseDebug('H8', 'adapty.ts:177', 'Purchase cancelled by purchase type', {
-        requestedPlanId: planId,
-        purchaseType,
-        elapsedMs: Date.now() - purchaseStartedAt,
-      });
       return { success: false, cancelled: true, message: 'Purchase cancelled.' };
     }
     const profile = purchaseResult?.profile ?? (await sdk.getProfile());
     const isPro = resolveIsProFromProfile(profile);
-    emitAdaptyPurchaseDebug('H5', 'adapty.ts:170', 'Adapty purchase completed', {
-      requestedPlanId: planId,
-      isPro,
-      accessLevelKeys: profile?.accessLevels ? Object.keys(profile.accessLevels).slice(0, 10) : [],
-    });
     setProStatus(isPro);
 
     if (!isPro) {
-      emitAdaptyPurchaseDebug('H7', 'adapty.ts:182', 'Purchase resolved without active PRO', {
-        requestedPlanId: planId,
-        elapsedMs: Date.now() - purchaseStartedAt,
-        profileAccessLevelKeys: profile?.accessLevels ? Object.keys(profile.accessLevels).slice(0, 10) : [],
-      });
       return {
         success: false,
         message: 'Purchase completed but premium access is not active yet. Please try Restore.',
@@ -259,16 +179,6 @@ export const purchaseAdaptyPlan = async (planId: string): Promise<AdaptyResult> 
   } catch (error) {
     const err: any = error;
     const message = normalizeAdaptyErrorMessage(err);
-    emitAdaptyPurchaseDebug('H4', 'adapty.ts:186', 'Adapty purchase failed', {
-      requestedPlanId: planId,
-      message,
-      name: err?.name ?? null,
-      code: err?.code ?? null,
-      adaptyCode: err?.adaptyCode ?? null,
-      statusCode: err?.statusCode ?? null,
-      detail: err?.detail ?? null,
-      rawKeys: err && typeof err === 'object' ? Object.keys(err).slice(0, 20) : [],
-    });
     const normalized = message.toLowerCase();
     const cancelled =
       normalized.includes('cancel') ||

@@ -13,7 +13,7 @@ export const Separator: React.FC<SeparatorProps> = ({ inset = true }) => {
     <View
       style={[
         styles.separator,
-        { backgroundColor: colors.separatorColor },
+        { backgroundColor: colors.separator },
         inset && styles.inset,
       ]}
     />

@@ -86,12 +86,6 @@ export const ConvertScreen: React.FC = () => {
     multiScrollRef.current?.scrollTo({ y: 0, animated: true });
     calculatorOffsetYRef.current = 0;
     multiOffsetYRef.current = 0;
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'refresh-debug-run-3',hypothesisId:'H8',location:'ConvertScreen.tsx:86',message:'resetPullOffset called',data:{source,beforeCalculator,beforeMulti,afterCalculator:calculatorOffsetYRef.current,afterMulti:multiOffsetYRef.current},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
-    // #region agent log
-    console.log('[RefreshDebug]', JSON.stringify({runId:'refresh-console-run-3',hypothesisId:'H8',location:'ConvertScreen.tsx:86',message:'resetPullOffset called',data:{source,beforeCalculator,beforeMulti,afterCalculator:calculatorOffsetYRef.current,afterMulti:multiOffsetYRef.current},timestamp:Date.now()}));
-    // #endregion
   };
   
   // Cursor blinking animation
@@ -110,19 +104,10 @@ export const ConvertScreen: React.FC = () => {
 
   // Refresh rates on mount
   useEffect(() => {
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'splash-debug-run-4',hypothesisId:'H12',location:'ConvertScreen.tsx:92',message:'Convert screen mount effect start',data:{fromCurrency,toCurrency,selectedCount:selectedCurrencies.length},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     void refreshRates()
       .then(() => {
-        // #region agent log
-        fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'splash-debug-run-4',hypothesisId:'H12',location:'ConvertScreen.tsx:96',message:'Convert screen mount refresh resolved',data:{},timestamp:Date.now()})}).catch(()=>{});
-        // #endregion
       })
       .catch((error: unknown) => {
-        // #region agent log
-        fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'splash-debug-run-4',hypothesisId:'H12',location:'ConvertScreen.tsx:101',message:'Convert screen mount refresh rejected',data:{message:error instanceof Error ? error.message : 'unknown'},timestamp:Date.now()})}).catch(()=>{});
-        // #endregion
       });
   }, []);
 
@@ -136,23 +121,11 @@ export const ConvertScreen: React.FC = () => {
 
   // Show paywall modal
   const showPaywallModal = () => {
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'refresh-debug-run-2',hypothesisId:'H5',location:'ConvertScreen.tsx:124',message:'showPaywallModal invoked',data:{activeTab,showPaywall,calculatorOffsetY:calculatorOffsetYRef.current,multiOffsetY:multiOffsetYRef.current},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
-    // #region agent log
-    console.log('[RefreshDebug]', JSON.stringify({runId:'refresh-console-run-2',hypothesisId:'H5',location:'ConvertScreen.tsx:124',message:'showPaywallModal invoked',data:{activeTab,showPaywall,calculatorOffsetY:calculatorOffsetYRef.current,multiOffsetY:multiOffsetYRef.current},timestamp:Date.now()}));
-    // #endregion
     resetPullOffset('open');
     setShowPaywall(true);
   };
 
   const handleClosePaywall = () => {
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'refresh-debug-run-2',hypothesisId:'H6',location:'ConvertScreen.tsx:132',message:'paywall close requested',data:{activeTab,calculatorOffsetY:calculatorOffsetYRef.current,multiOffsetY:multiOffsetYRef.current,isRefreshing:useCurrencyStore.getState().isRefreshing},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
-    // #region agent log
-    console.log('[RefreshDebug]', JSON.stringify({runId:'refresh-console-run-2',hypothesisId:'H6',location:'ConvertScreen.tsx:132',message:'paywall close requested',data:{activeTab,calculatorOffsetY:calculatorOffsetYRef.current,multiOffsetY:multiOffsetYRef.current,isRefreshing:useCurrencyStore.getState().isRefreshing},timestamp:Date.now()}));
-    // #endregion
     resetPullOffset('close');
     setShowPaywall(false);
   };
@@ -380,20 +353,11 @@ export const ConvertScreen: React.FC = () => {
   };
 
   const handleRefresh = async () => {
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'refresh-debug-run-1',hypothesisId:'H1',location:'ConvertScreen.tsx:330',message:'pull-to-refresh triggered',data:{isRefreshing,canRefresh:canRefresh(),showPaywall},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     if (!canRefresh()) {
       showPaywallModal();
-      // #region agent log
-      fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'refresh-debug-run-1',hypothesisId:'H1',location:'ConvertScreen.tsx:334',message:'pull-to-refresh blocked by paywall gate',data:{isRefreshingAfterBlock:isRefreshing},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
       return;
     }
     await refreshRates();
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/111fb94f-2b9a-4989-be5f-03386ef7a034',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'refresh-debug-run-1',hypothesisId:'H3',location:'ConvertScreen.tsx:340',message:'pull-to-refresh finished await',data:{isRefreshingAfterAwait:useCurrencyStore.getState().isRefreshing},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
   };
 
   const keypadButtons = [

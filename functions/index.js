@@ -4,9 +4,26 @@ const region = "us-central1";
 
 const jsonHeaders = {
   "Content-Type": "application/json",
+  "Cache-Control": "no-store",
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
+};
+
+const OPENAI_TIMEOUT_MS = 20000;
+const RATES_TIMEOUT_MS = 12000;
+const MAX_BASE64_IMAGE_SIZE = 3 * 1024 * 1024;
+
+const isLikelyBase64 = (value) => /^[A-Za-z0-9+/=\r\n]+$/.test(value);
+
+const fetchWithTimeout = async (url, options, timeoutMs) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 };
 
 const makeOpenAiBody = (base64Image) => ({
@@ -79,6 +96,14 @@ exports.aiScanPrice = onRequest(
         res.status(400).set(jsonHeaders).send(JSON.stringify({ error: "Missing base64Image" }));
         return;
       }
+      if (base64Image.length > MAX_BASE64_IMAGE_SIZE) {
+        res.status(413).set(jsonHeaders).send(JSON.stringify({ error: "Image too large" }));
+        return;
+      }
+      if (!isLikelyBase64(base64Image)) {
+        res.status(400).set(jsonHeaders).send(JSON.stringify({ error: "Invalid image payload" }));
+        return;
+      }
 
       const openAiKey = process.env.OPENAI_API_KEY;
       if (!openAiKey) {
@@ -86,14 +111,18 @@ exports.aiScanPrice = onRequest(
         return;
       }
 
-      const upstream = await fetch("https://api.openai.com/v1/responses", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${openAiKey}`,
+      const upstream = await fetchWithTimeout(
+        "https://api.openai.com/v1/responses",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${openAiKey}`,
+          },
+          body: JSON.stringify(makeOpenAiBody(base64Image)),
         },
-        body: JSON.stringify(makeOpenAiBody(base64Image)),
-      });
+        OPENAI_TIMEOUT_MS
+      );
 
       const text = await upstream.text();
       res.status(upstream.status).set(jsonHeaders).send(text);
@@ -135,7 +164,11 @@ exports.getLatestRates = onRequest(
         return;
       }
 
-      const upstream = await fetch(`https://v6.exchangerate-api.com/v6/${exchangeKey}/latest/${safeBase}`);
+      const upstream = await fetchWithTimeout(
+        `https://v6.exchangerate-api.com/v6/${exchangeKey}/latest/${safeBase}`,
+        {},
+        RATES_TIMEOUT_MS
+      );
       const text = await upstream.text();
       res.status(upstream.status).set(jsonHeaders).send(text);
     } catch (error) {
@@ -185,6 +218,15 @@ exports.getHistoricalRates = onRequest(
         res.status(400).set(jsonHeaders).send(JSON.stringify({ error: "Invalid day" }));
         return;
       }
+      const candidateDate = new Date(Date.UTC(safeYear, safeMonth - 1, safeDay));
+      if (
+        candidateDate.getUTCFullYear() !== safeYear ||
+        candidateDate.getUTCMonth() !== safeMonth - 1 ||
+        candidateDate.getUTCDate() !== safeDay
+      ) {
+        res.status(400).set(jsonHeaders).send(JSON.stringify({ error: "Invalid calendar date" }));
+        return;
+      }
 
       const exchangeKey = process.env.EXCHANGE_RATE_API_KEY;
       if (!exchangeKey) {
@@ -192,8 +234,10 @@ exports.getHistoricalRates = onRequest(
         return;
       }
 
-      const upstream = await fetch(
-        `https://v6.exchangerate-api.com/v6/${exchangeKey}/history/${safeBase}/${safeYear}/${safeMonth}/${safeDay}`
+      const upstream = await fetchWithTimeout(
+        `https://v6.exchangerate-api.com/v6/${exchangeKey}/history/${safeBase}/${safeYear}/${safeMonth}/${safeDay}`,
+        {},
+        RATES_TIMEOUT_MS
       );
       const text = await upstream.text();
       res.status(upstream.status).set(jsonHeaders).send(text);

@@ -14,6 +14,7 @@ PODS:
     - AdaptyUIBuilder (= 3.15.3)
   - AdaptyUIBuilder (3.15.3):
     - AdaptyLogger (= 3.15.3)
+  - Clarity (3.4.2)
   - EXConstants (18.0.13):
     - ExpoModulesCore
   - EXJSONUtils (0.15.0)
@@ -1546,6 +1547,9 @@ PODS:
     - AdaptyPlugin (= 3.15.3)
     - AdaptyUI (= 3.15.3)
     - React
+  - react-native-clarity (4.5.3):
+    - Clarity (= 3.4.2)
+    - React-Core
   - react-native-safe-area-context (5.6.2):
     - hermes-engine
     - RCTRequired
@@ -2309,6 +2313,7 @@ DEPENDENCIES:
   - React-Mapbuffer (from `../node_modules/react-native/ReactCommon`)
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
   - react-native-adapty-sdk (from `../node_modules/react-native-adapty`)
+  - "react-native-clarity (from `../node_modules/@microsoft/react-native-clarity`)"
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - React-NativeModulesApple (from `../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)
   - React-oscompat (from `../node_modules/react-native/ReactCommon/oscompat`)
@@ -2356,6 +2361,7 @@ SPEC REPOS:
     - AdaptyPlugin
     - AdaptyUI
     - AdaptyUIBuilder
+    - Clarity
     - ZXingObjC
 
 EXTERNAL SOURCES:
@@ -2468,6 +2474,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/microtasks"
   react-native-adapty-sdk:
     :path: "../node_modules/react-native-adapty"
+  react-native-clarity:
+    :path: "../node_modules/@microsoft/react-native-clarity"
   react-native-safe-area-context:
     :path: "../node_modules/react-native-safe-area-context"
   React-NativeModulesApple:
@@ -2553,6 +2561,7 @@ SPEC CHECKSUMS:
   AdaptyPlugin: d832e606563b2cc3e77dbc4ca23e64725a3b21c5
   AdaptyUI: 7b8515dade06d8a046826f024940c009bedb5f00
   AdaptyUIBuilder: e94ea218d936f58f13123fda19f3c13fba5cdb7d
+  Clarity: aca81ec79810e02924123e16e3b5c624c68b93c7
   EXConstants: 3635d4019f24e91f3d84707d958280085761e4bd
   EXJSONUtils: 1d3e4590438c3ee593684186007028a14b3686cd
   EXManifests: a8d97683e5c7a3b026ffbd58559c64dc655b747b
@@ -2607,6 +2616,7 @@ SPEC CHECKSUMS:
   React-Mapbuffer: 9050ee10c19f4f7fca8963d0211b2854d624973e
   React-microtasksnativemodule: f775db9e991c6f3b8ccbc02bfcde22770f96e23b
   react-native-adapty-sdk: f5b46f17e264eeb24a88012b2e8ea1ed4b03c375
+  react-native-clarity: a5ed455e8ac25e746125aee0814285c7a7de2c67
   react-native-safe-area-context: 37e680fc4cace3c0030ee46e8987d24f5d3bdab2
   React-NativeModulesApple: 8969913947d5b576de4ed371a939455a8daf28aa
   React-oscompat: ce47230ed20185e91de62d8c6d139ae61763d09c
