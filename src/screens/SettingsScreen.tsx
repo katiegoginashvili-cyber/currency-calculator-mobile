@@ -25,6 +25,12 @@ export const SettingsScreen: React.FC = () => {
   } = useCurrencyStore();
   const [showPaywall, setShowPaywall] = React.useState(false);
 
+  React.useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/30933eef-a3b4-4469-b38d-b3c1692116d3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'pro-paywall-pre-fix',hypothesisId:'H4',location:'src/screens/SettingsScreen.tsx:28',message:'Settings screen pro badge/paywall state',data:{isPro,showPaywall},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+  }, [isPro, showPaywall]);
+
   const legalText = `By downloading or using this application (“App”), you agree to the following Terms of Service. If you do not agree, please do not use the App.
 
 1. Use of the App
@@ -236,10 +242,31 @@ appsmajestic@gmail.com`;
   };
 
   const openAppStoreRating = async () => {
-    const appStoreReviewUrl = 'itms-apps://itunes.apple.com/app/id6743449424?action=write-review';
-    const fallbackUrl = 'https://apps.apple.com';
+    const appStoreReviewUrl = 'itms-apps://itunes.apple.com/app/id6759636829?action=write-review';
+    const fallbackUrl = 'https://apps.apple.com/app/id6759636829?action=write-review';
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/30933eef-a3b4-4469-b38d-b3c1692116d3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'rating-pre-fix',hypothesisId:'R1',location:'src/screens/SettingsScreen.tsx:241',message:'Rate button tapped',data:{appStoreReviewUrl,fallbackUrl},timestamp:Date.now()})}).catch(()=>{});
+    console.log('[RateDebug]', JSON.stringify({runId:'rating-post-fix',hypothesisId:'R1',location:'SettingsScreen.tsx:241',message:'Rate button tapped',data:{appStoreReviewUrl,fallbackUrl},timestamp:Date.now()}));
+    // #endregion
     const supported = await Linking.canOpenURL(appStoreReviewUrl);
-    await Linking.openURL(supported ? appStoreReviewUrl : fallbackUrl);
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/30933eef-a3b4-4469-b38d-b3c1692116d3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'rating-pre-fix',hypothesisId:'R2',location:'src/screens/SettingsScreen.tsx:244',message:'Rate canOpenURL result',data:{supported},timestamp:Date.now()})}).catch(()=>{});
+    console.log('[RateDebug]', JSON.stringify({runId:'rating-post-fix',hypothesisId:'R2',location:'SettingsScreen.tsx:244',message:'Rate canOpenURL result',data:{supported},timestamp:Date.now()}));
+    // #endregion
+    const targetUrl = supported ? appStoreReviewUrl : fallbackUrl;
+    try {
+      await Linking.openURL(targetUrl);
+      // #region agent log
+      fetch('http://127.0.0.1:7248/ingest/30933eef-a3b4-4469-b38d-b3c1692116d3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'rating-pre-fix',hypothesisId:'R3',location:'src/screens/SettingsScreen.tsx:251',message:'Rate openURL success',data:{targetUrl},timestamp:Date.now()})}).catch(()=>{});
+      console.log('[RateDebug]', JSON.stringify({runId:'rating-post-fix',hypothesisId:'R3',location:'SettingsScreen.tsx:251',message:'Rate openURL success',data:{targetUrl},timestamp:Date.now()}));
+      // #endregion
+    } catch (error) {
+      // #region agent log
+      fetch('http://127.0.0.1:7248/ingest/30933eef-a3b4-4469-b38d-b3c1692116d3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'rating-pre-fix',hypothesisId:'R4',location:'src/screens/SettingsScreen.tsx:256',message:'Rate openURL failed',data:{targetUrl,errorMessage:error instanceof Error ? error.message : String(error)},timestamp:Date.now()})}).catch(()=>{});
+      console.log('[RateDebug]', JSON.stringify({runId:'rating-post-fix',hypothesisId:'R4',location:'SettingsScreen.tsx:256',message:'Rate openURL failed',data:{targetUrl,errorMessage:error instanceof Error ? error.message : String(error)},timestamp:Date.now()}));
+      // #endregion
+      throw error;
+    }
   };
 
   const handlePurchase = async (planId: string) => {

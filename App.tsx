@@ -10,6 +10,7 @@ import { RootNavigator } from './src/navigation/RootNavigator';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { useCurrencyStore } from './src/store/currencyStore';
 import { initializeAdapty } from './src/services/adapty';
+import { recordRatingSession } from './src/services/ratingPrompt';
 
 const splashRoundedAsset = require('./assets/splash-rounded.png');
 const iconAsset = require('./assets/icon.png');
@@ -50,6 +51,7 @@ const AppContent: React.FC = () => {
     // #endregion
 
     void initializeAdapty();
+    void recordRatingSession();
 
     return () => {
       if (errorUtils?.setGlobalHandler && previousGlobalHandler) {

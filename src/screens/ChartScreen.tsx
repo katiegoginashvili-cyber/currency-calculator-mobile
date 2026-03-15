@@ -25,6 +25,7 @@ import { PaywallModal } from '../components/PaywallModal';
 import { getCurrencyByCode, getFlagBackground, currencies } from '../data/currencies';
 import { fetchChartData, ChartDataPoint } from '../api/exchangeRates';
 import { purchaseAdaptyPlan, restoreAdaptyPurchases } from '../services/adapty';
+import { trackRatingSuccessEvent } from '../services/ratingPrompt';
 
 const { width, height } = Dimensions.get('window');
 
@@ -85,6 +86,12 @@ export const ChartScreen: React.FC = () => {
   const [pendingFromCurrency, setPendingFromCurrency] = useState<string | null>(null);
   const [pendingToCurrency, setPendingToCurrency] = useState<string | null>(null);
   const chartScrollOffsetYRef = useRef(0);
+
+  useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/30933eef-a3b4-4469-b38d-b3c1692116d3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'pro-paywall-pre-fix',hypothesisId:'H5',location:'src/screens/ChartScreen.tsx:90',message:'Chart screen pro badge/paywall state',data:{isPro,showPaywall,hasShownInitialContent},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+  }, [isPro, showPaywall, hasShownInitialContent]);
   
   // Fetch chart data when currencies or period change
   useEffect(() => {
@@ -196,6 +203,7 @@ export const ChartScreen: React.FC = () => {
         const fallbackRate = getConvertedAmount(1, fromCurrency, toCurrency, rates);
         setChartData(buildFallbackChartData(selectedPeriod, fallbackRate));
       }
+      void trackRatingSuccessEvent('chart_refresh_success');
     } catch (err) {
       console.error('Failed to fetch chart data:', err);
       const fallbackRate = getConvertedAmount(1, fromCurrency, toCurrency, rates);

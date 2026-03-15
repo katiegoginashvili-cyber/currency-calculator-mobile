@@ -25,6 +25,7 @@ import { PaywallModal } from '../components/PaywallModal';
 import { getCurrencyByCode, getFlagBackground, currencies, getLocalCurrency } from '../data/currencies';
 import type { RootStackParamList } from '../navigation/types';
 import { purchaseAdaptyPlan, restoreAdaptyPurchases } from '../services/adapty';
+import { trackRatingSuccessEvent } from '../services/ratingPrompt';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -104,12 +105,21 @@ export const ConvertScreen: React.FC = () => {
 
   // Refresh rates on mount
   useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/30933eef-a3b4-4469-b38d-b3c1692116d3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'pro-paywall-pre-fix',hypothesisId:'H3',location:'src/screens/ConvertScreen.tsx:106',message:'Convert screen pro badge/paywall state',data:{isPro,showPaywall,activeTab},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     void refreshRates()
       .then(() => {
       })
       .catch((error: unknown) => {
       });
   }, []);
+
+  useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/30933eef-a3b4-4469-b38d-b3c1692116d3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'pro-paywall-pre-fix',hypothesisId:'H3',location:'src/screens/ConvertScreen.tsx:115',message:'Convert screen pro badge/paywall state changed',data:{isPro,showPaywall,activeTab},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+  }, [isPro, showPaywall, activeTab]);
 
   useEffect(() => {
     if (locationSuggestions) {
@@ -293,6 +303,7 @@ export const ConvertScreen: React.FC = () => {
         setPendingOperator(null);
         setShouldResetInput(true);
         incrementConversionCount();
+        void trackRatingSuccessEvent('convert_success');
       }
     } else {
       // Number input
@@ -374,13 +385,15 @@ export const ConvertScreen: React.FC = () => {
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>Convert</Text>
         <View style={styles.headerRight}>
-          <TouchableOpacity 
-            style={[styles.proBadge, { backgroundColor: colors.primary }]}
-            onPress={showPaywallModal}
-          >
-            <MaterialIcons name="star" size={14} color="#FFFFFF" />
-            <Text style={styles.proBadgeText}>Go Pro</Text>
-          </TouchableOpacity>
+          {!isPro ? (
+            <TouchableOpacity 
+              style={[styles.proBadge, { backgroundColor: colors.primary }]}
+              onPress={showPaywallModal}
+            >
+              <MaterialIcons name="star" size={14} color="#FFFFFF" />
+              <Text style={styles.proBadgeText}>Go Pro</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       </View>
       

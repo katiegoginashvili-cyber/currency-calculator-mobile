@@ -24,6 +24,7 @@ import { analyzePriceFromPhotoWithAI } from '../services/aiPriceScan';
 import type { RootStackParamList } from '../navigation/types';
 import { PaywallModal } from '../components/PaywallModal';
 import { purchaseAdaptyPlan, restoreAdaptyPurchases } from '../services/adapty';
+import { trackRatingSuccessEvent } from '../services/ratingPrompt';
 
 const isExpoGo = Constants.appOwnership === 'expo';
 const FIAT_CURRENCIES = currencies.filter((item) => item.category === 'fiat');
@@ -155,6 +156,9 @@ export const ScanScreen: React.FC = () => {
   };
 
   const handleAiScan = async () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/30933eef-a3b4-4469-b38d-b3c1692116d3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'scan-pre-fix',hypothesisId:'H4',location:'src/screens/ScanScreen.tsx:158',message:'handleAiScan invoked',data:{isPro,cameraReady:Boolean(cameraRef.current),isAiScanning,appOwnership:Constants.appOwnership},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     if (!isPro) {
       setShowPaywall(true);
       return;
@@ -177,6 +181,9 @@ export const ScanScreen: React.FC = () => {
       if (!photo?.base64) {
         throw new Error('AI scan photo missing base64');
       }
+      // #region agent log
+      fetch('http://127.0.0.1:7248/ingest/30933eef-a3b4-4469-b38d-b3c1692116d3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'scan-pre-fix',hypothesisId:'H5',location:'src/screens/ScanScreen.tsx:182',message:'photo captured for AI scan',data:{hasBase64:Boolean(photo?.base64),base64Length:photo?.base64?.length ?? 0},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
 
 
       const aiResult = await analyzePriceFromPhotoWithAI(photo.base64);
@@ -197,15 +204,19 @@ export const ScanScreen: React.FC = () => {
             aiResult.confidence * 100,
           )}%)`,
         );
+        void trackRatingSuccessEvent('scan_success');
       }
       setAiHint(
         aiResult.amount
           ? `AI: ${aiResult.reason || 'Price recognized'}`
-          : 'AI ვერ იპოვა მთავარი ფასი, სცადე ახლოდან და უკეთეს ფოკუსში',
+          : 'AI could not detect the main price. Try moving closer and improving focus.',
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      setAiHint(`AI სკანი ვერ შესრულდა: ${message}`);
+      // #region agent log
+      fetch('http://127.0.0.1:7248/ingest/30933eef-a3b4-4469-b38d-b3c1692116d3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0c8447'},body:JSON.stringify({sessionId:'0c8447',runId:'scan-pre-fix',hypothesisId:'H2',location:'src/screens/ScanScreen.tsx:210',message:'handleAiScan caught error',data:{errorMessage:message.slice(0,220)},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+      setAiHint(`AI scan failed: ${message}`);
     } finally {
       setIsAiScanning(false);
     }

@@ -1,6 +1,7 @@
 import Constants from 'expo-constants';
 import { adapty } from 'react-native-adapty';
 import { useCurrencyStore } from '../store/currencyStore';
+import { trackRatingSuccessEvent } from './ratingPrompt';
 
 let isAdaptyInitialized = false;
 
@@ -175,6 +176,7 @@ export const purchaseAdaptyPlan = async (planId: string): Promise<AdaptyResult> 
       };
     }
 
+    void trackRatingSuccessEvent('subscription_activated');
     return { success: true, message: 'Subscription activated.' };
   } catch (error) {
     const err: any = error;
@@ -201,6 +203,9 @@ export const restoreAdaptyPurchases = async (): Promise<AdaptyResult> => {
     const profile = await sdk.restorePurchases();
     const isPro = resolveIsProFromProfile(profile);
     setProStatus(isPro);
+    if (isPro) {
+      void trackRatingSuccessEvent('subscription_activated');
+    }
     return isPro
       ? { success: true, message: 'Purchases restored successfully.' }
       : { success: false, message: 'No active subscription was found to restore.' };

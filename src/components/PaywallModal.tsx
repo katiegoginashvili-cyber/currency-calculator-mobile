@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
+import { LEGAL_PRIVACY_POLICY, LEGAL_TERMS_OF_USE } from '../constants/legalDocuments';
 
 const { width, height } = Dimensions.get('window');
 
@@ -26,6 +27,8 @@ interface PaywallModalProps {
   onPurchase: (planId: string) => Promise<void> | void;
   onRestore?: () => Promise<void> | void;
 }
+
+type LegalDocType = 'privacy' | 'terms' | null;
 
 const PLANS = [
   {
@@ -62,6 +65,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
   const [selectedPlan, setSelectedPlan] = useState('annual');
   const [isProcessingPurchase, setIsProcessingPurchase] = useState(false);
   const [isProcessingRestore, setIsProcessingRestore] = useState(false);
+  const [activeLegalDoc, setActiveLegalDoc] = useState<LegalDocType>(null);
   const appStateRef = useRef(AppState.currentState);
 
   useEffect(() => {
@@ -107,6 +111,9 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
     gradientMid3: isDark ? 'rgba(0,0,0,0.82)' : 'rgba(245,245,247,0.85)',
     gradientBottom: isDark ? 'rgba(0,0,0,1)' : 'rgba(245,245,247,1)',
   };
+
+  const legalTitle = activeLegalDoc === 'privacy' ? 'Privacy Policy' : 'Terms of Use';
+  const legalContent = activeLegalDoc === 'privacy' ? LEGAL_PRIVACY_POLICY : LEGAL_TERMS_OF_USE;
 
   return (
     <Modal
@@ -258,7 +265,42 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
               {isProcessingPurchase ? 'Processing...' : 'Subscribe'}
             </Text>
           </TouchableOpacity>
+
+          <View style={styles.legalLinksRow}>
+            <TouchableOpacity onPress={() => setActiveLegalDoc('privacy')}>
+              <Text style={[styles.legalLinkText, { color: paywallColors.textSecondary }]}>
+                Privacy Policy
+              </Text>
+            </TouchableOpacity>
+            <Text style={[styles.legalSeparator, { color: paywallColors.textSecondary }]}>•</Text>
+            <TouchableOpacity onPress={() => setActiveLegalDoc('terms')}>
+              <Text style={[styles.legalLinkText, { color: paywallColors.textSecondary }]}>
+                Terms of Use
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
+
+        <Modal
+          visible={activeLegalDoc !== null}
+          animationType="slide"
+          onRequestClose={() => setActiveLegalDoc(null)}
+        >
+          <View style={[styles.legalModalContainer, { backgroundColor: paywallColors.background, paddingTop: insets.top }]}>
+            <View style={styles.legalHeader}>
+              <TouchableOpacity onPress={() => setActiveLegalDoc(null)} style={styles.legalHeaderSide}>
+                <Text style={[styles.legalBackText, { color: paywallColors.accent }]}>Back</Text>
+              </TouchableOpacity>
+              <Text style={[styles.legalHeaderTitle, { color: paywallColors.text }]}>{legalTitle}</Text>
+              <View style={styles.legalHeaderSide} />
+            </View>
+            <ScrollView style={styles.legalScrollView} contentContainerStyle={styles.legalScrollContent}>
+              <Text style={[styles.legalBodyText, { color: paywallColors.textSecondary }]}>
+                {legalContent}
+              </Text>
+            </ScrollView>
+          </View>
+        </Modal>
       </View>
     </Modal>
   );
@@ -436,5 +478,53 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
+  },
+  legalLinksRow: {
+    marginTop: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  legalLinkText: {
+    fontSize: 13,
+    fontWeight: '500',
+    opacity: 0.72,
+  },
+  legalSeparator: {
+    fontSize: 11,
+    opacity: 0.6,
+  },
+  legalModalContainer: {
+    flex: 1,
+  },
+  legalHeader: {
+    height: 52,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  legalHeaderSide: {
+    width: 70,
+  },
+  legalBackText: {
+    fontSize: 17,
+    fontWeight: '500',
+  },
+  legalHeaderTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  legalScrollView: {
+    flex: 1,
+  },
+  legalScrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+  },
+  legalBodyText: {
+    fontSize: 15,
+    lineHeight: 22,
   },
 });
